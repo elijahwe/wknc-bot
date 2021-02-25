@@ -45,11 +45,7 @@ def is_av(show):
 
 def next_show(upcoming_shows):
     return next(
-        (
-            show
-            for show in upcoming_shows
-            if not is_av(show) and not is_in_past(show["start"])
-        ),
+        (show for show in upcoming_shows if not is_av(show) and not is_in_past(show["start"])),
         None,
     )
 
@@ -62,9 +58,9 @@ async def on_ready():
 @bot.command(name="np")
 async def now_playing(ctx):
     try:
-        last_spin = r.get(
-            "https://spinitron.com/api/spins?count=1", headers=headers
-        ).json()["items"][0]
+        last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()[
+            "items"
+        ][0]
         response_message = "HD-1 is now playing: {} by {}".format(
             last_spin["song"], last_spin["artist"]
         )
@@ -87,13 +83,11 @@ async def get_schedule(ctx):
             if not is_today(show["start"]):
                 break
             if not is_av(show):
-                show_persona = r.get(
-                    show["_links"]["personas"][0]["href"], headers=headers
-                ).json()["name"]
+                show_persona = r.get(show["_links"]["personas"][0]["href"], headers=headers).json()[
+                    "name"
+                ]
                 schedule.append(
-                    "{}: {} at {}\n".format(
-                        show["title"], show_persona, my_parser(show["start"])
-                    )
+                    "{}: {} at {}\n".format(show["title"], show_persona, my_parser(show["start"]))
                 )
         if schedule:
             response_message = "Today's Schedule\n".join(schedule)
