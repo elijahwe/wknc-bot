@@ -2,8 +2,9 @@
 .python-version
 .vscode
 
-# env
+# Local Files
 .env
+*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
