@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM gorialis/discord.py:alpine-minimal
 
 WORKDIR /wknc-bot
 
