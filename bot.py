@@ -295,4 +295,14 @@ async def bindings(ctx: commands.Context):
     await ctx.send(response_message)
 
 
+@bot.command(name="about", brief="A little bit about me!")
+async def about(ctx: commands.Context):
+    await ctx.send(
+        (
+            "2 weeks/bot/python. https://github.ncsu.edu/wdecicc/wknc-discord-bot\n"
+            "I'm a bot meant to provide some integration with Spinitron! Use !help to find out more"
+        )
+    )
+
+
 bot.run(TOKEN, reconnect=True)
