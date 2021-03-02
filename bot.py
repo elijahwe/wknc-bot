@@ -198,7 +198,6 @@ async def bind_dj(ctx: commands.Context, *args):
         return
 
     dj_name = " ".join(args[:])
-    response = r.get("https://spinitron.com/api/personas", headers=headers).json()
 
     current_binding = whois_user(ctx.author.id)
     if current_binding:
@@ -211,21 +210,18 @@ async def bind_dj(ctx: commands.Context, *args):
         await ctx.send(response_message)
         return
 
-    spinitron_id: int = None
-    while (response["_meta"]["currentPage"] < response["_meta"]["pageCount"]) and not spinitron_id:
-        for persona in response["items"]:
-            if persona["name"] == dj_name:
-                spinitron_id = persona["id"]
-                dj_name = persona["name"]
-                break
-        response = r.get(response["_links"]["next"]["href"], headers=headers).json()
+    response = r.get(
+        "https://spinitron.com/api/personas?name={}".format(dj_name.replace(" ", "%20")),
+        headers=headers,
+    ).json()["items"]
 
     response_message: str
-    if not spinitron_id:
+    if not response:
         response_message = (
             f"Huh, I couldn't seem to find {dj_name}. Are you sure that's the right DJ Name?"
         )
     else:
+        spinitron_id = response[0]["id"]
         response_message = (
             f"That's a nice looking page you have there, {ctx.author.mention}"
             f"\nhttps://spinitron.com/WKNC/dj/{spinitron_id}"
