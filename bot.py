@@ -281,15 +281,7 @@ async def bind_dj(ctx: commands.Context, *args):
 
 @bot.command(name="whoami", brief="Your associated DJ name and page")
 async def whoami(ctx: commands.Context):
-    response_message: str = None
-    user = whois_user(ctx.author.id)
-    if user:
-        response_message = "You're {}!\nhttps://spinitron.com/WKNC/dj/{}".format(
-            user["dj_name"], user["spinitron_id"]
-        )
-    else:
-        response_message = "Hmm, I don't know that one. Have you !bind 'ed yourself yet?"
-    await ctx.send(response_message)
+    await whois(ctx, ctx.author)
 
 
 @bot.command(name="whois", brief="Someone else's associated DJ name and page. ex. !whois @Jeffrey")
