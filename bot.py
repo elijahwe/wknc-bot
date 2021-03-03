@@ -330,10 +330,14 @@ async def bindings(ctx: commands.Context):
         response_message = "Current Bindings:\n"
         binding_list = []
         for key in dj_bindings:
+            # Skip any cached records w/o dj name
+            if not dj_bindings[key]["discord_id"]:
+                continue
             discord_name = (await bot.fetch_user(dj_bindings[key]["discord_id"])).name
             binding_list.append("{} - {}".format(discord_name, dj_bindings[key]["dj_name"]))
         response_message = "\n".join(binding_list)
-    else:
+
+    if not response_message:
         response_message = "There are currently no DJ bindings"
 
     await ctx.send(response_message)
