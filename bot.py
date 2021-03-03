@@ -247,6 +247,9 @@ async def bind_dj(ctx: commands.Context, *args):
         return
 
     dj_name = " ".join(args[:])
+    if dj_name == "DJ AV":
+        await ctx.send("ಠ_ಠ")
+        return
 
     current_binding = whois_user(ctx.author.id)
     if current_binding:
@@ -292,10 +295,14 @@ async def whoami(ctx: commands.Context):
 
 @bot.command(name="whois", brief="Someone else's associated DJ name and page. ex. !whois @Jeffrey")
 async def whois(ctx: commands.Context, user: User):
-    user = whois_user(user.id)
-    if user:
+    if user.id == bot.user.id:
+        await ctx.send("https://youtu.be/BwLs22Hxi6Q?t=38")
+        return
+
+    user_binding = whois_user(user.id)
+    if user_binding:
         response_message = "That's {}!\nhttps://spinitron.com/WKNC/dj/{}".format(
-            user["dj_name"], user["spinitron_id"]
+            user_binding["dj_name"], user_binding["spinitron_id"]
         )
     else:
         response_message = "Hmm, I don't know that one. Ask them to !bind themselves."
