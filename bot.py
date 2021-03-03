@@ -3,13 +3,12 @@ the last logged song (presumably now playing) and the schedule of the stations""
 import os
 import shelve
 from datetime import datetime
-from discord.ext.commands.errors import UserNotFound
 
+import discogs_client
 import requests as r
 from dateutil import parser, tz
-from discord import User, File, Embed
+from discord import Embed, User
 from discord.ext import commands, tasks
-import discogs_client
 from dotenv import load_dotenv
 
 # Pull in the environment variables, everything that would need to swapped out for another station to use.
