@@ -3,21 +3,25 @@ the last logged song (presumably now playing) and the schedule of the stations""
 import os
 import shelve
 from datetime import datetime
+from discord.ext.commands.errors import UserNotFound
 
 import requests as r
 from dateutil import parser, tz
-from discord import User
+from discord import User, File, Embed
 from discord.ext import commands, tasks
+import discogs_client
 from dotenv import load_dotenv
 
 # Pull in the environment variables, everything that would need to swapped out for another station to use.
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 SPINITRON_TOKEN = os.getenv("SPINITRON_TOKEN")
+DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
 LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
 DJ_AV_ID = os.getenv("DJ_AV_ID")
 
 bot = commands.Bot(command_prefix="!")
+discogs = discogs_client.Client("WKNC-Bot/0.1", user_token=DISCOGS_TOKEN)
 headers = {"Authorization": f"Bearer {SPINITRON_TOKEN}"}
 
 # The 'database' that python uses to bind the discord id to the spinitron id
@@ -131,6 +135,34 @@ def whois_user(discord_id: int) -> any:
     return None
 
 
+def get_dj_name(spinitron_id: str) -> str:
+    if not spinitron_id in dj_bindings:
+        dj_name = r.get(
+            "https://spinitron.com/api/personas/{}".format(spinitron_id.replace(" ", "%20")),
+            headers=headers,
+        ).json()["name"]
+
+        dj_bindings[spinitron_id] = {
+            "spinitron_id": spinitron_id,
+            "dj_name": dj_name,
+        }
+
+    return dj_bindings[spinitron_id]["dj_name"]
+
+
+def get_album_art(last_spin):
+    img_art: str = None
+    if last_spin["image"]:
+        img_art = last_spin["image"]
+    else:
+        d_search = discogs.search(
+            "{} - {}".format(last_spin["artist"], last_spin["song"]), type="release"
+        )
+        if len(d_search) > 0:
+            img_art = d_search[0].thumb
+    return img_art
+
+
 @tasks.loop(seconds=5)
 async def dj_pinger():
     return
@@ -143,18 +175,29 @@ async def on_ready():
 
 
 @bot.command(name="np", brief="The song currently playing on HD-1")
-async def now_playing(ctx):
+async def now_playing(ctx: commands.Context):
     try:
         last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()[
             "items"
         ][0]
-        response_message = "HD-1 is now playing: {} by {}".format(
-            last_spin["song"], last_spin["artist"]
-        )
+        spinitron_id = r.get(
+            "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
+            headers=headers,
+        ).json()["persona_id"]
     except:
         await ctx.send("Whoops! Something went wrong, try again soon-ish")
-    else:
-        await ctx.send(response_message)
+        return
+    img_art = get_album_art(last_spin)
+
+    embed = Embed(
+        title=last_spin["song"], description=last_spin["artist"], color=0x6C3E09
+    ).set_author(
+        name=get_dj_name(str(spinitron_id)), url=f"https://spinitron.com/WKNC/dj/{spinitron_id}"
+    )
+    if img_art:
+        embed.set_image(url=img_art)
+
+    await ctx.send(embed=embed)
 
 
 @bot.command(name="schedule", brief="The list of scheduled shows for the day")
