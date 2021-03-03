@@ -144,6 +144,7 @@ def get_dj_name(spinitron_id: str) -> str:
         dj_bindings[spinitron_id] = {
             "spinitron_id": spinitron_id,
             "dj_name": dj_name,
+            "discord_id": None,
         }
 
     return dj_bindings[spinitron_id]["dj_name"]
