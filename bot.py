@@ -173,6 +173,12 @@ async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
 
 
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(error)
+
+
 @bot.command(name="np", brief="The song currently playing on HD-1")
 async def now_playing(ctx: commands.Context):
     try:
