@@ -361,19 +361,19 @@ async def unbind(ctx: commands.Context):
 
 @bot.command(name="bindings", brief="Shows the current Discord - Spinitron bindings")
 async def bindings(ctx: commands.Context):
-    response_message: str
+    response_message: str = ""
+    binding_list = []
     if dj_bindings:
         response_message = "Current Bindings:\n"
-        binding_list = []
         for key in dj_bindings:
             # Skip any cached records w/o dj name
             if not dj_bindings[key]["discord_id"]:
                 continue
             discord_name = (await bot.fetch_user(dj_bindings[key]["discord_id"])).name
             binding_list.append("{} - {}".format(discord_name, dj_bindings[key]["dj_name"]))
-        response_message = "\n".join(binding_list)
+        response_message = response_message + "\n".join(binding_list)
 
-    if not response_message:
+    if not binding_list:
         response_message = "There are currently no DJ bindings"
 
     await ctx.send(response_message)
