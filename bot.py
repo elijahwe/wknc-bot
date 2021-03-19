@@ -277,14 +277,22 @@ async def next_up(ctx):
 
 
 @bot.command(name="bind", brief="Binds your DJ name to your Discord ID ex. !bind DJ Jazzy Jeff")
-async def bind_dj(ctx: commands.Context, *args):
-    if not args:
+async def bind_dj(ctx: commands.Context, *, arg):
+    if not arg:
         await ctx.send("Hold on there cowboy, you have to bind yourself to something!")
         return
 
-    dj_name = " ".join(args[:])
+    dj_name = arg
     if dj_name == "DJ AV":
-        await ctx.send("ಠ_ಠ")
+        await ctx.send(
+            random.choice(
+                [
+                    "ಠ_ಠ",
+                    "I bet you think you're real funny, huh? 'Oh, I'm gonna bind myself to the AV system. It's funny because I'm actually a person!' Newsflash buddy, you're not funny or original. Get better material.",
+                    "no",
+                ]
+            )
+        )
         return
 
     current_binding = whois_user(ctx.author.id)
