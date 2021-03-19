@@ -1,15 +1,20 @@
 """This is a Discord Bot meant to provide integration with the Spinitron API. This includes getting
 the last logged song (presumably now playing) and the schedule of the stations"""
 import os
+import random
 import shelve
-from datetime import datetime
-
+from collections import Counter
+from datetime import datetime, timedelta
 import discogs_client
+from enum import Enum
+from discord_argparse.argparse import OptionalArgument
 import requests as r
 from dateutil import parser, tz
-from discord import Embed, User
+from discord import Embed, User, File
 from discord.ext import commands, tasks
+from discord_argparse import ArgumentConverter
 from dotenv import load_dotenv
+from typing import Optional
 
 # Pull in the environment variables, everything that would need to swapped out for another station to use.
 load_dotenv()
@@ -18,6 +23,37 @@ SPINITRON_TOKEN = os.getenv("SPINITRON_TOKEN")
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
 LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
 DJ_AV_ID = os.getenv("DJ_AV_ID")
+PASSWORD = os.getenv("PASSWORD")
+
+
+class ShowID(Enum):
+    CHAINSAW = 177577
+    DAYTIME = 177706
+    UNDERGROUND = 177709
+    AFTERHOURS = 107806
+    LOCAL_LUNCH = 35580
+    LOCAL_RAP_LUNCH = 13325
+    ALL = ""
+
+
+def to_enum(argument: str) -> str:
+    return argument.upper().replace(" ", "_")
+
+
+def to_lower(argument: str) -> str:
+    return argument.lower()
+
+
+summary_param_converter = ArgumentConverter(
+    show=OptionalArgument(
+        to_enum, doc="The show to summarize, defaults to all spins", default="ALL"
+    ),
+    days=OptionalArgument(
+        int, doc="Look at all spins starting # days ago, defaults to 7", default=7
+    ),
+    top=OptionalArgument(int, doc="The top # spins, defaults to 10", default=10),
+    by=OptionalArgument(to_lower, doc="By song or artist, defaults to song", default="song"),
+)
 
 bot = commands.Bot(command_prefix="!")
 discogs = discogs_client.Client("WKNC-Bot/0.1", user_token=DISCOGS_TOKEN)
@@ -342,6 +378,58 @@ async def bindings(ctx: commands.Context):
 
     await ctx.send(response_message)
 
+
+
+@bot.command(name="summary", brief="Gets a summary of the logged spins for the week")
+async def summary(
+    ctx: commands.Context, *, params: summary_param_converter = summary_param_converter.defaults()
+):
+    days = params["days"]
+    start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%x")
+    show_id = ShowID[params["show"].replace(" ", "_").upper()]
+    by = params["by"]
+
+    if days > 30:
+        await ctx.send(
+            "For summaries more than 30 days please use https://spinitron.com/m/spin/chart"
+        )
+        return
+
+    page = 1
+    response = True
+    song_dict = {}
+    artist_dict = {}
+
+    message = await ctx.send("Just a moment, let me get that for you...")
+    async with ctx.typing():
+        while response:
+            response = r.get(
+                f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
+                headers=headers,
+            ).json()["items"]
+            print(page)
+            for spin in response:
+                key = "{} by {}".format(spin["song"], spin["artist"])
+                artist = spin["artist"]
+                if key not in song_dict:
+                    song_dict[key] = 0
+                    artist_dict[artist] = 0
+                song_dict[key] += 1
+                artist_dict[artist] += 1
+            page += 1
+
+        if by == "artist":
+            counter = Counter(artist_dict).most_common(params["top"])
+        else:
+            counter = Counter(song_dict).most_common(params["top"])
+
+        summary_list = []
+        for key, value in counter:
+            summary_list.append(f"    -{key} | {value} times")
+        response_message = f"**Top {by}s of the past {days} days**\n" + "\n".join(summary_list)
+
+    await message.edit(content=response_message)
+    await ctx.send(ctx.author.mention)
 
 @bot.command(name="about", brief="A little bit about me!")
 async def about(ctx: commands.Context):
