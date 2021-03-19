@@ -212,8 +212,12 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
+    print(error)
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(error)
+    await ctx.send(
+        "OOPSIE WOOPSIE!! uwu We made a fucky wucky!! A wittle fucko boingo! The co- you get the gist, something went wrong"
+    )
 
 
 @bot.command(name="np", brief="The song currently playing on HD-1")
