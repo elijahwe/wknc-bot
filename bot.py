@@ -218,17 +218,12 @@ async def on_command_error(ctx, error):
 
 @bot.command(name="np", brief="The song currently playing on HD-1")
 async def now_playing(ctx: commands.Context):
-    try:
-        last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()[
-            "items"
-        ][0]
+    last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()["items"][0]
         spinitron_id = r.get(
             "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
             headers=headers,
         ).json()["persona_id"]
-    except:
-        await ctx.send("Whoops! Something went wrong, try again soon-ish")
-        return
+
     img_art = get_album_art(last_spin)
 
     embed = Embed(
@@ -244,23 +239,17 @@ async def now_playing(ctx: commands.Context):
 
 @bot.command(name="schedule", brief="The list of scheduled shows for the day")
 async def get_schedule(ctx):
-    try:
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows",
             headers=headers,
         ).json()["items"]
         response_message = upcoming_show_schedule(upcoming_shows)
 
-    except BaseException as err:
-        print(err)
-        await ctx.send("Whoops! Something went wrong, maybe don't do that right now.")
-    else:
         await ctx.send(response_message)
 
 
 @bot.command(name="next", brief="The next, non DJ AV show")
 async def next_up(ctx):
-    try:
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows",
             headers=headers,
@@ -269,10 +258,7 @@ async def next_up(ctx):
         response_message = "Coming up next is {} at {}".format(
             next_dj_show["title"], my_parser(next_dj_show["start"])
         )
-    except BaseException as err:
-        print(err)
-        await ctx.send("Whoops! Something went wrong, don't do that right now.")
-    else:
+
         await ctx.send(response_message)
 
 
