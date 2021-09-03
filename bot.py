@@ -223,10 +223,10 @@ async def on_command_error(ctx, error):
 @bot.command(name="np", brief="The song currently playing on HD-1")
 async def now_playing(ctx: commands.Context):
     last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()["items"][0]
-        spinitron_id = r.get(
-            "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
-            headers=headers,
-        ).json()["persona_id"]
+    spinitron_id = r.get(
+        "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
+        headers=headers,
+    ).json()["persona_id"]
 
     img_art = get_album_art(last_spin)
 
