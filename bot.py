@@ -19,7 +19,8 @@ from typing import Optional
 # Pull in the environment variables, everything that would need to swapped out for another station to use.
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
-SPINITRON_TOKEN = os.getenv("SPINITRON_TOKEN")
+SPINITRON_TOKEN_HD1 = os.getenv("SPINITRON_TOKEN_HD1")
+SPINITRON_TOKEN_HD2 = os.getenv("SPINITRON_TOKEN_HD2")
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
 LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
 DJ_AV_ID = os.getenv("DJ_AV_ID")
@@ -34,6 +35,10 @@ class ShowID(Enum):
     LOCAL_LUNCH = 35580
     LOCAL_RAP_LUNCH = 13325
     ALL = ""
+
+class WKNC(str, Enum):
+    HD1 = 'WKNC'
+    HD2 = 'WKNC-HD2'
 
 
 def to_enum(argument: str) -> str:
@@ -57,7 +62,8 @@ summary_param_converter = ArgumentConverter(
 
 bot = commands.Bot(command_prefix="!")
 discogs = discogs_client.Client("WKNC-Bot/0.1", user_token=DISCOGS_TOKEN)
-headers = {"Authorization": f"Bearer {SPINITRON_TOKEN}"}
+headers_hd1 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD1}"}
+headers_hd2 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD2}"}
 
 # The 'database' that python uses to bind the discord id to the spinitron id
 # It might not be the best method but it's simple to use, may change in the future
@@ -151,7 +157,7 @@ def upcoming_show_schedule(upcoming_shows: list) -> str:
         if not is_today(show["start"]):
             break
         if not is_av(show):
-            show_persona = r.get(show["_links"]["personas"][0]["href"], headers=headers).json()[
+            show_persona = r.get(show["_links"]["personas"][0]["href"], headers=headers_hd1).json()[
                 "name"
             ]
             schedule.append(
@@ -170,7 +176,7 @@ def whois_user(discord_id: int) -> any:
     return None
 
 
-def get_dj_name(spinitron_id: str) -> str:
+def get_dj_name(spinitron_id: str, headers) -> str:
     if not spinitron_id in dj_bindings:
         dj_name = r.get(
             "https://spinitron.com/api/personas/{}".format(spinitron_id.replace(" ", "%20")),
@@ -198,12 +204,6 @@ def get_album_art(last_spin):
             img_art = d_search[0].thumb
     return img_art
 
-
-@tasks.loop(seconds=5)
-async def dj_pinger():
-    return
-
-
 @bot.event
 async def on_ready():
     """What the discord bot does upon connection to the server"""
@@ -215,13 +215,25 @@ async def on_command_error(ctx, error):
     print(error)
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(error)
-    await ctx.send(
-        "OOPSIE WOOPSIE!! uwu We made a fucky wucky!! A wittle fucko boingo! The co- you get the gist, something went wrong"
-    )
+    elif isinstance(error, commands.CommandNotFound):
+        pass
+    else:
+        await ctx.send(
+            "OOPSIE WOOPSIE!! uwu We made a fucky wucky!! A wittle fucko boingo! The co- you get the gist, something went wrong"
+        )
 
 
 @bot.command(name="np", brief="The song currently playing on HD-1")
-async def now_playing(ctx: commands.Context):
+async def now_playing_hd1(ctx: commands.Context):
+    embed = await now_playing_query(headers_hd1, WKNC.HD1)
+    await ctx.send(embed=embed)
+
+@bot.command(name="np2", brief="The song currently playing on HD-2")
+async def now_playing_hd2(ctx: commands.Context):
+    embed = await now_playing_query(headers_hd2, WKNC.HD2)
+    await ctx.send(embed=embed)
+
+async def now_playing_query(headers, channel):
     last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()["items"][0]
     spinitron_id = r.get(
         "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
@@ -233,19 +245,18 @@ async def now_playing(ctx: commands.Context):
     embed = Embed(
         title=last_spin["song"], description=last_spin["artist"], color=0x6C3E09
     ).set_author(
-        name=get_dj_name(str(spinitron_id)), url=f"https://spinitron.com/WKNC/dj/{spinitron_id}"
+        name=get_dj_name(str(spinitron_id), headers), url=f"https://spinitron.com/{channel}/dj/{spinitron_id}"
     )
     if img_art:
         embed.set_image(url=img_art)
-
-    await ctx.send(embed=embed)
+    return embed
 
 
 @bot.command(name="schedule", brief="The list of scheduled shows for the day")
 async def get_schedule(ctx):
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows",
-            headers=headers,
+            headers=headers_hd1,
         ).json()["items"]
         response_message = upcoming_show_schedule(upcoming_shows)
 
@@ -256,7 +267,7 @@ async def get_schedule(ctx):
 async def next_up(ctx):
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows",
-            headers=headers,
+            headers=headers_hd1,
         ).json()["items"]
         next_dj_show = next_show(upcoming_shows)
         response_message = "Coming up next is {} at {}".format(
@@ -298,7 +309,7 @@ async def bind_dj(ctx: commands.Context, *, arg):
 
     response = r.get(
         "https://spinitron.com/api/personas?name={}".format(dj_name.replace(" ", "%20")),
-        headers=headers,
+        headers=headers_hd1,
     ).json()["items"]
 
     response_message: str
@@ -310,7 +321,7 @@ async def bind_dj(ctx: commands.Context, *, arg):
         spinitron_id = response[0]["id"]
         response_message = (
             f"That's a nice looking page you have there, {ctx.author.mention}"
-            f"\nhttps://spinitron.com/WKNC/dj/{spinitron_id}"
+            f"\nhttps://spinitron.com/{WKNC.HD1}/dj/{spinitron_id}"
         )
         dj_bindings[str(spinitron_id)] = {
             "discord_id": ctx.author.id,
@@ -403,7 +414,7 @@ async def summary(
         while response:
             response = r.get(
                 f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
-                headers=headers,
+                headers=headers_hd1,
             ).json()["items"]
             print(page)
             for spin in response:
