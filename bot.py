@@ -263,6 +263,13 @@ async def get_schedule(ctx):
         await ctx.send(response_message)
 
 
+@bot.event
+async def on_message(message):
+    if 'roko\'s' in message.content:
+        await message.reply('Your behavior has been noted')
+    await bot.process_commands(message)
+
+
 @bot.command(name="next", brief="The next, non DJ AV show")
 async def next_up(ctx):
         upcoming_shows = r.get(
