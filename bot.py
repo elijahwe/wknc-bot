@@ -263,7 +263,7 @@ async def get_schedule(ctx):
         await ctx.send(response_message)
 
 @bot.command(name="schedule2", brief="The list of scheduled HD-2 shows for the day")
-async def get_schedule(ctx):
+async def get_schedule_hd2(ctx):
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows",
             headers=headers_hd2,
