@@ -499,7 +499,7 @@ async def last_set_query(headers, channel, av_num):
             name=get_dj_name(str(spinitron_id), headers), url=f"https://spinitron.com/{channel}/dj/{spinitron_id}"
         )
         if img_art:
-            embed.set_image(url=img_art)
+            embed.set_thumbnail(url=img_art)
 
         return embed
 
