@@ -26,3 +26,5 @@ SPORTS_HTML_CLASS_GAME_DATE = "sidearm-schedule-game-opponent-date" # HTML class
 
 HD1_WEBSTREAM_URL = "http://173.193.205.96:7430/stream"
 HD2_WEBSTREAM_URL = "http://173.193.205.96:7447/stream"
+
+STATUS_MESSAGE = "1"
