@@ -344,6 +344,10 @@ class Misc(commands.Cog):
                     no_emoji = emoji
         if (no_emoji):
             await ctx.message.add_reaction(no_emoji);
+
+    @commands.command(name="status", hidden=True)
+    async def status(self, ctx: commands.Context):
+        await ctx.send(cogs.shared.STATUS_MESSAGE)
     
 
 async def setup(bot):
