@@ -69,20 +69,21 @@ class Voice(commands.Cog):
         # Check if bot is in voice
         if len(self.bot.voice_clients) > 0:
             # Check if bot is alone in voice channel
-            if self.bot.voice_clients[0].channel.id == before.channel.id and len(before.channel.members) == 1:
-                # Disconnect
-                await self.bot.voice_clients[0].disconnect()
+            if (before.channel):
+                if self.bot.voice_clients[0].channel.id == before.channel.id and len(before.channel.members) == 1:
+                    # Disconnect
+                    await self.bot.voice_clients[0].disconnect()
 
-                # If left HD1 voice, send message in HD1 text
-                if before.channel.id == HD1_DISCORD_VOICE_CHANNEL_ID:
-                    hd1_textchannel = self.bot.get_channel(HD1_DISCORD_TEXT_CHANNEL_ID)
-                    async with hd1_textchannel.typing():
-                        await hd1_textchannel.send("All users have left the voice channel, disconnecting")
-                # If left HD2 voice, send message in HD2 text
-                if before.channel.id == self.HD2_DISCORD_VOICE_CHANNEL_ID:
-                    hd2_textchannel = self.bot.get_channel(HD2_DISCORD_TEXT_CHANNEL_ID)
-                    async with hd2_textchannel.typing():
-                        await hd2_textchannel.send("All users have left the voice channel, disconnecting")
+                    # If left HD1 voice, send message in HD1 text
+                    if before.channel.id == HD1_DISCORD_VOICE_CHANNEL_ID:
+                        hd1_textchannel = self.bot.get_channel(HD1_DISCORD_TEXT_CHANNEL_ID)
+                        async with hd1_textchannel.typing():
+                            await hd1_textchannel.send("All users have left the voice channel, disconnecting")
+                    # If left HD2 voice, send message in HD2 text
+                    if before.channel.id == HD2_DISCORD_VOICE_CHANNEL_ID:
+                        hd2_textchannel = self.bot.get_channel(HD2_DISCORD_TEXT_CHANNEL_ID)
+                        async with hd2_textchannel.typing():
+                            await hd2_textchannel.send("All users have left the voice channel, disconnecting")
                 
 
     @commands.hybrid_command(name="join", brief="Join a voice channel")
