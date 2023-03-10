@@ -21,7 +21,7 @@ import urllib.parse
 
 import cogs.shared
 
-LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
+LOCAL_TIMEZONE = str(tz.gettz('US/Eastern'))
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
 SPINITRON_TOKEN_HD1 = os.getenv("SPINITRON_TOKEN_HD1")
 SPINITRON_TOKEN_HD2 = os.getenv("SPINITRON_TOKEN_HD2")
