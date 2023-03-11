@@ -272,7 +272,7 @@ class Broadcast(commands.Cog):
                 return self.make_set_embed(last_playlists[0], headers, channel)
             
             # If no playlists, say so
-            await ctx.send(f"It doesn't look like {dj_name} has had any HD{channelnum} sets yet!")
+            await ctx.send(f"It doesn't look like {dj_name} has had any HD-{channelnum} sets yet!")
 
         return None
 
