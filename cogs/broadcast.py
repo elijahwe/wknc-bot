@@ -959,6 +959,10 @@ class Broadcast(commands.Cog):
     async def time(self, ctx: commands.Context):
         await ctx.send("Now (UTC): {}\nNow (local): {}\nNow (EST): {}".format(datetime.utcnow(), datetime.now(tz.gettz(LOCAL_TIMEZONE)), datetime.now(tz.gettz("US/Eastern"))))
     
+    @commands.command(name="timezone", hidden=True)
+    async def timezone(self, ctx: commands.Context):
+        await ctx.send(f"Local timezone: {LOCAL_TIMEZONE}")
+    
     @commands.command(name="resettime", hidden=True)
     async def resettime(self, ctx: commands.Context):
         global LOCAL_TIMEZONE
