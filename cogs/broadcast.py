@@ -21,7 +21,7 @@ import urllib.parse
 
 import cogs.shared
 
-os.environ["LOCAL_TIMEZONE"] = str(tz.gettz("US/Eastern"))
+os.environ["LOCAL_TIMEZONE"] = "America/New_York"
 LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
 SPINITRON_TOKEN_HD1 = os.getenv("SPINITRON_TOKEN_HD1")
@@ -954,21 +954,6 @@ class Broadcast(commands.Cog):
 
         await message.edit(content=response_message)
         await ctx.send(ctx.author.mention)
-
-    @commands.command(name="time", hidden=True)
-    async def time(self, ctx: commands.Context):
-        await ctx.send("Now (UTC): {}\nNow ({}): {}\nNow (EST): {}".format(datetime.utcnow(), LOCAL_TIMEZONE, datetime.now(tz.gettz(LOCAL_TIMEZONE)), datetime.now(tz.gettz("US/Eastern"))))
-    
-    @commands.command(name="timezone", hidden=True)
-    async def timezone(self, ctx: commands.Context):
-        await ctx.send(f"Local timezone: {LOCAL_TIMEZONE}")
-    
-    @commands.command(name="resettime", hidden=True)
-    async def resettime(self, ctx: commands.Context):
-        global LOCAL_TIMEZONE
-        os.environ["LOCAL_TIMEZONE"] = "America/New_York"
-        LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
-        await ctx.send(f"Reset LOCAL_TIMEZONE to {LOCAL_TIMEZONE}")
 
 
 async def setup(bot):
