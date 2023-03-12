@@ -966,7 +966,7 @@ class Broadcast(commands.Cog):
     @commands.command(name="resettime", hidden=True)
     async def resettime(self, ctx: commands.Context):
         global LOCAL_TIMEZONE
-        os.environ["LOCAL_TIMEZONE"] = str(tz.gettz("US/Eastern"))
+        os.environ["LOCAL_TIMEZONE"] = "America/New_York"
         LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
         await ctx.send(f"Reset LOCAL_TIMEZONE to {LOCAL_TIMEZONE}")
 
