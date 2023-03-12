@@ -955,6 +955,10 @@ class Broadcast(commands.Cog):
         await message.edit(content=response_message)
         await ctx.send(ctx.author.mention)
 
+    @commands.command(name="utctime", hidden=True)
+    async def utctime(self, ctx: commands.Context):
+        await ctx.send(f"Now (UTC): {datetime.utcnow()}")
+
 
 async def setup(bot):
     await bot.add_cog(Broadcast(bot))
