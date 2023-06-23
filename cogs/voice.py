@@ -111,7 +111,7 @@ class Voice(commands.Cog):
 
             state = await channel.connect()
 
-            if state:
+            if state and ctx.voice_client.is_connected():
                 if "hd" in channel.name.lower() and "1" in channel.name.lower():
                     # If joining HD1 voice, play HD1 webstream
                     async with ctx.typing():
@@ -134,6 +134,8 @@ class Voice(commands.Cog):
                             if emoji.name == "transbug":
                                 transbug = emoji
                         await ctx.send(f'Playing HD-2 in VC, come join! {transbug if transbug else ""}')
+                else:
+                    ctx.send("Could not connect to voice")
 
     @commands.hybrid_command(name="leave", brief="Leave the current voice channel")
     @commands.has_permissions(administrator = True)
