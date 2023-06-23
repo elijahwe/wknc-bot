@@ -135,7 +135,7 @@ class Voice(commands.Cog):
                                 transbug = emoji
                         await ctx.send(f'Playing HD-2 in VC, come join! {transbug if transbug else ""}')
             else:
-                ctx.send("Could not connect to voice")
+                await ctx.send("Could not connect to voice")
 
     @commands.hybrid_command(name="leave", brief="Leave the current voice channel")
     @commands.has_permissions(administrator = True)
