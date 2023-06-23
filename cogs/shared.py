@@ -24,7 +24,7 @@ URL_MBB = "https://gopack.com/sports/baseball/schedule" # Men's basketball sched
 SPORTS_HTML_CLASS_UPCOMING_GAME = "sidearm-schedule-game-upcoming" # HTML class for an upcoming game on the schedule
 SPORTS_HTML_CLASS_GAME_DATE = "sidearm-schedule-game-opponent-date" # HTML class for a game date on the schedule
 
-HD1_WEBSTREAM_URL = "http://173.193.205.96:7430/stream"
-HD2_WEBSTREAM_URL = "http://173.193.205.96:7447/stream"
+HD1_WEBSTREAM_URL = "https://streaming.live365.com/a45877"
+HD2_WEBSTREAM_URL = "https://streaming.live365.com/a30009"
 
 STATUS_MESSAGE = "2"
