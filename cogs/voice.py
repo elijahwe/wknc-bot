@@ -107,7 +107,7 @@ class Voice(commands.Cog):
         if (channel):
             # Disconnect from current voice if nexessary
             if ctx.voice_client is not None:
-                await ctx.voice_client.disconnect()
+                await ctx.voice_client.disconnect(force=True)
 
             state = await channel.connect()
 
