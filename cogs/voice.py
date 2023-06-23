@@ -138,6 +138,8 @@ class Voice(commands.Cog):
                     await ctx.send(f"Joined {channel.name} voice channel!")
             else:
                 await ctx.send("Could not connect to voice")
+        else:
+            await ctx.send("Could not find resolve voice channel")
 
     @commands.hybrid_command(name="leave", brief="Leave the current voice channel")
     @commands.has_permissions(administrator = True)
