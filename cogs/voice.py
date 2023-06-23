@@ -134,6 +134,8 @@ class Voice(commands.Cog):
                             if emoji.name == "transbug":
                                 transbug = emoji
                         await ctx.send(f'Playing HD-2 in VC, come join! {transbug if transbug else ""}')
+                else:
+                    await ctx.send(f"Joined {channel.name} voice channel!")
             else:
                 await ctx.send("Could not connect to voice")
 
