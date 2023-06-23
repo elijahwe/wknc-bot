@@ -112,7 +112,7 @@ class Voice(commands.Cog):
             state = await channel.connect()
 
             if state:
-                if channel.id == HD1_DISCORD_VOICE_CHANNEL_ID:
+                if "hd" in channel.name.lower() and "1" in channel.name.lower():
                     # If joining HD1 voice, play HD1 webstream
                     async with ctx.typing():
                         player = await self.YTDLSource.from_url(cogs.shared.HD1_WEBSTREAM_URL, loop=self.bot.loop, stream=True)
@@ -123,7 +123,7 @@ class Voice(commands.Cog):
                             if emoji.name == "transbug":
                                 transbug = emoji
                         await ctx.send(f'Playing HD-1 in VC, come join! {transbug if transbug else ""}')
-                elif channel.id == HD2_DISCORD_VOICE_CHANNEL_ID:
+                elif "hd" in channel.name.lower() and "2" in channel.name.lower():
                     # If joining HD2 voice, play HD2 webstream
                     async with ctx.typing():
                         player = await self.YTDLSource.from_url(cogs.shared.HD2_WEBSTREAM_URL, loop=self.bot.loop, stream=True)
