@@ -4,19 +4,12 @@ Bindings contains commands related to the bot's Discord-Spinitron binding system
 """
 from discord import Embed, User, app_commands
 from discord.ext import commands
-import os
+from importlib import reload
 import random
 import requests as r
 import shelve
 
 import cogs.shared
-
-SPINITRON_TOKEN_HD1 = os.getenv("SPINITRON_TOKEN_HD1")
-SPINITRON_TOKEN_HD2 = os.getenv("SPINITRON_TOKEN_HD2")
-
-# Headers used for Spinitron authorization
-headers_hd1 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD1}"}
-headers_hd2 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD2}"}
 
 # The 'database' that python uses to bind the discord id to the spinitron id
 # It might not be the best method but it's simple to use, may change in the future
@@ -65,11 +58,11 @@ class Bindings(commands.Cog):
     async def bind_query(self, ctx: commands.Context, user: User, djname: str, channel: str, thirdperson: bool):
         # Interpret channel argument
         if (channel.upper() == "HD1" or channel.upper() == "HD-1" or channel.upper() == "1"):
-            headers = headers_hd1
+            headers = cogs.shared.HEADERS_HD1
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
             channelnum = 1
         elif (channel.upper() == "HD2" or channel.upper() == "HD-2" or channel.upper() == "2"):
-            headers = headers_hd2
+            headers = cogs.shared.HEADERS_HD2
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
             channelnum = 2
         else:
@@ -160,11 +153,11 @@ class Bindings(commands.Cog):
     async def bind_id_query(self, ctx: commands.Context, user: User, id: int, channel: str, thirdperson: bool):
         # Interpret channel argument
         if (channel.upper() == "HD1" or channel.upper() == "HD-1" or channel.upper() == "1"):
-            headers = headers_hd1
+            headers = cogs.shared.HEADERS_HD1
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
             channelnum = 1
         elif (channel.upper() == "HD2" or channel.upper() == "HD-2" or channel.upper() == "2"):
-            headers = headers_hd2
+            headers = cogs.shared.HEADERS_HD2
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
             channelnum = 2
         else:
@@ -340,3 +333,4 @@ class Bindings(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Bindings(bot))
+    reload(cogs.shared)
