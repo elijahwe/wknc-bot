@@ -4,17 +4,11 @@ Tasks_Events contains no commands, just tasks and events such as updating the bo
 """
 import discord
 from discord.ext import commands, tasks
-import os
+from importlib import reload
 import requests as r
 
 import cogs.shared
 
-SPINITRON_TOKEN_HD1 = os.getenv("SPINITRON_TOKEN_HD1")
-SPINITRON_TOKEN_HD2 = os.getenv("SPINITRON_TOKEN_HD2")
-
-# Headers used for Spinitron authorization
-headers_hd1 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD1}"}
-headers_hd2 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD2}"}
 
 # Set default value for status listening text
 current_listening_text: str = "WKNC"
@@ -29,13 +23,13 @@ class Tasks_Events(commands.Cog):
     async def changeStatus(self):
         """Every minute, check the currently playing set and update Discord status to it"""
         global current_listening_text
-        current_set = r.get("https://spinitron.com/api/playlists?count=1", headers=headers_hd1).json()["items"][0]
+        current_set = r.get("https://spinitron.com/api/playlists?count=1", headers=cogs.shared.HEADERS_HD1).json()["items"][0]
         listening_text: str
         if (str(current_set["persona_id"]) == cogs.shared.DJ_AV_HD1_SPINITRON_ID):
             # If AV is currently playing, set status to genre block name instead
-            listening_text = r.get("https://spinitron.com/api/shows?count=1", headers=headers_hd1).json()["items"][0]["category"]
+            listening_text = r.get("https://spinitron.com/api/shows?count=1", headers=cogs.shared.HEADERS_HD1).json()["items"][0]["category"]
         else:
-            listening_text = r.get("https://spinitron.com/api/shows?count=1", headers=headers_hd1).json()["items"][0]["title"]
+            listening_text = r.get("https://spinitron.com/api/shows?count=1", headers=cogs.shared.HEADERS_HD1).json()["items"][0]["title"]
 
         if (current_listening_text != str(listening_text)):
             print("Updating status")
@@ -60,3 +54,4 @@ class Tasks_Events(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Tasks_Events(bot))
+    reload(cogs.shared)
