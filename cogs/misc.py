@@ -6,15 +6,12 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from discord import Embed, app_commands, AllowedMentions
 from discord.ext import commands
-import os
+from importlib import reload
 import random
 import requests as r
 
 import cogs.shared
 
-BOT_CREATOR_DISCORD_ID = int(os.getenv("BOT_CREATOR_DISCORD_ID"))
-BOT_ADMIN_DISCORD_ID = int(os.getenv("BOT_ADMIN_DISCORD_ID"))
-DEV_SERVER_DISCORD_ID = int(os.getenv("DEV_SERVER_DISCORD_ID"))
 
 def month_string_to_datetime(month_string: str) -> datetime:
     now = datetime.now()
@@ -174,8 +171,8 @@ class Misc(commands.Cog):
             await ctx.send(
                 (
                     "2/bot/352 Witherspoon. https://github.com/elijahwe/wknc-bot\n"
-                    f"Originally created by <@!{BOT_CREATOR_DISCORD_ID}>\n"
-                    f"Maintained by <@!{BOT_ADMIN_DISCORD_ID}>\n"
+                    f"Originally created by <@!{cogs.shared.BOT_CREATOR_DISCORD_ID}>\n"
+                    f"Maintained by <@!{cogs.shared.BOT_ADMIN_DISCORD_ID}>\n"
                     "I'm a bot meant to help the WKNC Discord community! Use !help to find out more"
                 ), allowed_mentions=AllowedMentions.none() # Turn off mentions to avoid pinging
             )
@@ -338,7 +335,7 @@ class Misc(commands.Cog):
             if emoji.name == "no":
                 no_emoji = emoji
         if (not no_emoji):
-            emojis = self.bot.get_guild(DEV_SERVER_DISCORD_ID).emojis
+            emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
             for emoji in emojis:
                 if emoji.name == "no":
                     no_emoji = emoji
@@ -348,7 +345,7 @@ class Misc(commands.Cog):
     @commands.command(name="status", hidden=True)
     async def status(self, ctx: commands.Context):
         await ctx.send(cogs.shared.STATUS_MESSAGE)
-    
 
 async def setup(bot):
     await bot.add_cog(Misc(bot))
+    reload(cogs.shared)
