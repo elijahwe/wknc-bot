@@ -13,27 +13,13 @@ from discord.ext import commands
 import discord.ui
 import discogs_client
 from enum import Enum
+from importlib import reload
 import random
 import re
 import requests as r
-import os
 import urllib.parse
 
 import cogs.shared
-
-os.environ["LOCAL_TIMEZONE"] = "America/New_York"
-LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE")
-DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
-SPINITRON_TOKEN_HD1 = os.getenv("SPINITRON_TOKEN_HD1")
-SPINITRON_TOKEN_HD2 = os.getenv("SPINITRON_TOKEN_HD2")
-HD1_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("HD1_DISCORD_TEXT_CHANNEL_ID"))
-HD2_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("HD2_DISCORD_TEXT_CHANNEL_ID"))
-DEV_SERVER_DISCORD_ID = int(os.getenv("DEV_SERVER_DISCORD_ID"))
-
-# Discogs and Spinitron authentification
-discogs = discogs_client.Client("WKNC-Bot/0.1", user_token=DISCOGS_TOKEN)
-headers_hd1 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD1}"}
-headers_hd2 = {"Authorization": f"Bearer {SPINITRON_TOKEN_HD2}"}
 
 
 class ShowID(Enum):
@@ -57,7 +43,7 @@ def my_parser(date: str, space: bool = True, ampm: bool = True) -> str:
     if space:
         spacechar = " "
     dt = parser.parse(date)
-    dt = dt.replace(tzinfo=tz.UTC).astimezone(tz.gettz(LOCAL_TIMEZONE)).hour
+    dt = dt.replace(tzinfo=tz.UTC).astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE)).hour
     ampm_str = ""
     if (ampm):
         if (dt < 12):
@@ -101,12 +87,12 @@ def is_today(date: str) -> bool:
     """
     indate = parser.parse(date)
     nextmidnight = (
-        datetime.now(tz.gettz(LOCAL_TIMEZONE))
+        datetime.now(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
         .replace(hour=23, minute=59, second=59, microsecond=59)
         .astimezone(tz.UTC)
     )
     lastmidnight = (
-        datetime.now(tz.gettz(LOCAL_TIMEZONE))
+        datetime.now(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
         .replace(hour=0, minute=0, second=0, microsecond=0)
         .astimezone(tz.UTC)
     )
@@ -121,12 +107,12 @@ def is_yesterday(date: str) -> bool:
     """
     indate = parser.parse(date) + timedelta(days = 1)
     nextmidnight = (
-        datetime.now(tz.gettz(LOCAL_TIMEZONE))
+        datetime.now(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
         .replace(hour=23, minute=59, second=59, microsecond=59)
         .astimezone(tz.UTC)
     )
     lastmidnight = (
-        datetime.now(tz.gettz(LOCAL_TIMEZONE))
+        datetime.now(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
         .replace(hour=0, minute=0, second=0, microsecond=0)
         .astimezone(tz.UTC)
     )
@@ -160,6 +146,8 @@ def get_dj_name(spinitron_id: str, headers) -> str:
     return dj_name
 
 def get_album_art(last_spin):
+    discogs = discogs_client.Client("WKNC-Bot/0.1", user_token=cogs.shared.DISCOGS_TOKEN)
+
     img_art: str = None
     if last_spin["image"]:
         img_art = last_spin["image"]
@@ -195,9 +183,9 @@ class Broadcast(commands.Cog):
     async def djset(self, ctx: commands.Context, *, djname: str = None):
         async with ctx.typing():
             # Invoke other command based on channel
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('djset1'), djname=djname)
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('djset2'), djname=djname)
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the djset1 or djset2 commands")
@@ -208,9 +196,9 @@ class Broadcast(commands.Cog):
         async with ctx.typing():
             # Get embed - choose function based on whether djname argument was entered
             if not djname:
-                embed = await self.last_set_query(ctx, headers_hd1, cogs.shared.SPINITRON_URL_CHANNEL_HD1, cogs.shared.DJ_AV_HD1_SPINITRON_ID)
+                embed = await self.last_set_query(ctx, cogs.shared.HEADERS_HD1, cogs.shared.SPINITRON_URL_CHANNEL_HD1, cogs.shared.DJ_AV_HD1_SPINITRON_ID)
             else:
-                embed = await self.dj_last_set_query(ctx, headers_hd1, cogs.shared.SPINITRON_URL_CHANNEL_HD1, djname)
+                embed = await self.dj_last_set_query(ctx, cogs.shared.HEADERS_HD1, cogs.shared.SPINITRON_URL_CHANNEL_HD1, djname)
 
             if (embed):
                 await ctx.send(embed=embed)
@@ -221,9 +209,9 @@ class Broadcast(commands.Cog):
         async with ctx.typing():
             # Get embed - choose function based on whether djname argument was entered
             if not djname:
-                embed = await self.last_set_query(ctx, headers_hd2, cogs.shared.SPINITRON_URL_CHANNEL_HD2, cogs.shared.DJ_AV_HD2_SPINITRON_ID)
+                embed = await self.last_set_query(ctx, cogs.shared.HEADERS_HD2, cogs.shared.SPINITRON_URL_CHANNEL_HD2, cogs.shared.DJ_AV_HD2_SPINITRON_ID)
             else:
-                embed = await self.dj_last_set_query(ctx, headers_hd2, cogs.shared.SPINITRON_URL_CHANNEL_HD2, djname)
+                embed = await self.dj_last_set_query(ctx, cogs.shared.HEADERS_HD2, cogs.shared.SPINITRON_URL_CHANNEL_HD2, djname)
 
             if (embed):
                 await ctx.send(embed=embed)
@@ -280,7 +268,7 @@ class Broadcast(commands.Cog):
     def make_set_embed(self, lastset, headers, channel):
         # Get beginning time of set and parse
         utcstring = lastset["start"]
-        starttime =  parser.parse(lastset["start"]).astimezone(tz.gettz(LOCAL_TIMEZONE))
+        starttime =  parser.parse(lastset["start"]).astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
         ltstring = starttime.isoformat()
         
         # Default values for vars
@@ -331,7 +319,7 @@ class Broadcast(commands.Cog):
             for i in set_items:
                 # Get start time of song and parse
                 utcstring = i["start"]
-                starttime =  parser.parse(i["start"]).astimezone(tz.gettz(LOCAL_TIMEZONE))
+                starttime =  parser.parse(i["start"]).astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
                 ltstring = starttime.isoformat()
                 hour = ltstring[11:13]
                 minute = utcstring[14:16]
@@ -376,9 +364,9 @@ class Broadcast(commands.Cog):
     async def listeners(self, ctx: commands.Context):
         # Invoke other command based on channel
         async with ctx.typing():
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('listeners1'))
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('listeners2'))
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the listeners1 or listeners2 commands")
@@ -404,9 +392,9 @@ class Broadcast(commands.Cog):
     async def last_played(self, ctx: commands.Context):
         async with ctx.typing():
             # Invoke other command based on channel
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('lp1'))
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('lp2'))
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the lp1 or lp2 commands")
@@ -415,14 +403,14 @@ class Broadcast(commands.Cog):
     async def last_played_hd1(self, ctx: commands.Context):
         async with ctx.typing():
             # Get embed and send
-            embed = await self.last_played_query(headers_hd1, cogs.shared.SPINITRON_URL_CHANNEL_HD1)
+            embed = await self.last_played_query(cogs.shared.HEADERS_HD1, cogs.shared.SPINITRON_URL_CHANNEL_HD1)
             await ctx.send("The previous song on HD-1 was:", embed=embed)
 
     @commands.hybrid_command(name="lp2", brief="The last played song on HD-2")
     async def last_played_hd2(self, ctx: commands.Context):
         async with ctx.typing():
             # Get embed and send
-            embed = await self.last_played_query(headers_hd2, cogs.shared.SPINITRON_URL_CHANNEL_HD2)
+            embed = await self.last_played_query(cogs.shared.HEADERS_HD2, cogs.shared.SPINITRON_URL_CHANNEL_HD2)
             await ctx.send("The previous song on HD-2 was:", embed=embed)
 
     async def last_played_query(self, headers, channel):
@@ -454,9 +442,9 @@ class Broadcast(commands.Cog):
     async def last_played_songs(self, ctx: commands.Context):
         async with ctx.typing():
             # Invoke other command based on channel
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('lps1'))
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('lps2'))
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the lps1 or lps2 commands")
@@ -467,8 +455,8 @@ class Broadcast(commands.Cog):
             # Send thinking message to be shown while generating embed
             message = await ctx.send(":thinking: thinking...")
             # Generate and send embed (with button)
-            embed = self.last_played_songs_query(headers_hd1, cogs.shared.SPINITRON_URL_CHANNEL_HD1, 1)
-            await message.edit(content=f"The last played songs on HD-1:", embed=embed, view=self.LPS_Button(outer_instance=self, headers=headers_hd1, channel=cogs.shared.SPINITRON_URL_CHANNEL_HD1, message=message))
+            embed = self.last_played_songs_query(cogs.shared.HEADERS_HD1, cogs.shared.SPINITRON_URL_CHANNEL_HD1, 1)
+            await message.edit(content=f"The last played songs on HD-1:", embed=embed, view=self.LPS_Button(outer_instance=self, headers=cogs.shared.HEADERS_HD1, channel=cogs.shared.SPINITRON_URL_CHANNEL_HD1, message=message))
 
     @commands.hybrid_command(name="lps2", brief="List of the last played songs on HD-2")
     async def last_played_songs_hd2(self, ctx: commands.Context):
@@ -476,8 +464,8 @@ class Broadcast(commands.Cog):
             # Send thinking message to be shown while generating embed
             message = await ctx.send(":thinking: thinking...")
             # Generate and send embed (with button)
-            embed = self.last_played_songs_query(headers_hd2, cogs.shared.SPINITRON_URL_CHANNEL_HD2, 1)
-            await message.edit(content=f"The last played songs on HD-2:", embed=embed, view=self.LPS_Button(outer_instance=self, headers=headers_hd2, channel=cogs.shared.SPINITRON_URL_CHANNEL_HD2, message=message))
+            embed = self.last_played_songs_query(cogs.shared.HEADERS_HD2, cogs.shared.SPINITRON_URL_CHANNEL_HD2, 1)
+            await message.edit(content=f"The last played songs on HD-2:", embed=embed, view=self.LPS_Button(outer_instance=self, headers=cogs.shared.HEADERS_HD2, channel=cogs.shared.SPINITRON_URL_CHANNEL_HD2, message=message))
 
     class LPS_Button(discord.ui.View):
         """Class to use as the view in the lps command response message (implements button)"""
@@ -528,7 +516,7 @@ class Broadcast(commands.Cog):
             # Show thinking message (throw in a little random emoji sometimes for fun :) )
             if (self.page > cogs.shared.LPS_RAND_THRESH and random.randint(1,cogs.shared.LPS_RAND_POOL) == 1):
                 try:
-                    thinkMessage = random.choice(self.bot.get_guild(DEV_SERVER_DISCORD_ID).emojis)
+                    thinkMessage = random.choice(self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis)
                 except:
                     thinkMessage = ":thinking: thinking..."
             else:
@@ -568,7 +556,7 @@ class Broadcast(commands.Cog):
 
             # Get and parse starting time of song
             utcstring = i["start"]
-            starttime =  parser.parse(i["start"]).astimezone(tz.gettz(LOCAL_TIMEZONE))
+            starttime =  parser.parse(i["start"]).astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
             ltstring = starttime.isoformat()
             hour = ltstring[11:13]
             minute = utcstring[14:16]
@@ -592,9 +580,9 @@ class Broadcast(commands.Cog):
     async def next_up(self, ctx: commands.Context):
         # Invoke other command based on channel
         async with ctx.typing():
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('nextshow1'))
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('nextshow2'))
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the nextshow1 or nextshow2 commands")
@@ -605,7 +593,7 @@ class Broadcast(commands.Cog):
             # Find next show and send
             upcoming_shows = r.get(
                 "https://spinitron.com/api/shows",
-                headers=headers_hd1,
+                headers=cogs.shared.HEADERS_HD1,
             ).json()["items"]
             next_dj_show = next_show(upcoming_shows, 1)
             response_message = "Coming up next is {} at {}".format(
@@ -620,7 +608,7 @@ class Broadcast(commands.Cog):
             # Find next show and send
             upcoming_shows = r.get(
                 "https://spinitron.com/api/shows",
-                headers=headers_hd2,
+                headers=cogs.shared.HEADERS_HD2,
             ).json()["items"]
             next_dj_show = next_show(upcoming_shows, 2)
             response_message = "Coming up next is {} at {}".format(
@@ -634,9 +622,9 @@ class Broadcast(commands.Cog):
     async def now_playing(self, ctx: commands.Context):
         async with ctx.typing():
             # Invoke other command based on channel
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('np1'))
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('np2'))
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the np1 or np2 commands")
@@ -645,14 +633,14 @@ class Broadcast(commands.Cog):
     async def now_playing_hd1(self, ctx: commands.Context):
         async with ctx.typing():
             # Get embed and send
-            embed = await self.now_playing_query(headers_hd1, cogs.shared.SPINITRON_URL_CHANNEL_HD1)
+            embed = await self.now_playing_query(cogs.shared.HEADERS_HD1, cogs.shared.SPINITRON_URL_CHANNEL_HD1)
             await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="np2", brief="The song currently playing on HD-2")
     async def now_playing_hd2(self, ctx: commands.Context):
         async with ctx.typing():
             # Get embed and send
-            embed = await self.now_playing_query(headers_hd2, cogs.shared.SPINITRON_URL_CHANNEL_HD2)
+            embed = await self.now_playing_query(cogs.shared.HEADERS_HD2, cogs.shared.SPINITRON_URL_CHANNEL_HD2)
             await ctx.send(embed=embed)
 
     async def now_playing_query(self, headers, channel):
@@ -681,9 +669,9 @@ class Broadcast(commands.Cog):
     async def schedule(self, ctx: commands.Context, *, day: str = None):
         async with ctx.typing():
             # Invoke other command based on channel
-            if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+            if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('schedule1'), day=day)
-            elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+            elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
                 await ctx.invoke(self.bot.get_command('schedule2'), day=day)
             else:
                 await ctx.send("Please either send this command in a dedicated channel or use the schedule1 or schedule2 commands")
@@ -767,10 +755,10 @@ class Broadcast(commands.Cog):
     def day_show_schedule(self, channel: int, date: datetime.date):
         # Interpret channel
         if channel == 2:
-            chheaders = headers_hd2
+            chheaders = cogs.shared.HEADERS_HD2
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
         else:
-            chheaders = headers_hd1
+            chheaders = cogs.shared.HEADERS_HD1
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
         
         # Get beginning and end of the day as datetimes and strings
@@ -815,10 +803,10 @@ class Broadcast(commands.Cog):
             str: A formatted string of upcoming shows or a message indicating there are no more shows
         """
         if channel == 2:
-            chheaders = headers_hd2
+            chheaders = cogs.shared.HEADERS_HD2
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
         else:
-            chheaders = headers_hd1
+            chheaders = cogs.shared.HEADERS_HD1
             channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
 
         upcoming_shows = r.get(
@@ -850,9 +838,9 @@ class Broadcast(commands.Cog):
     @commands.hybrid_command(name="summary", brief="Gets a summary of the logged spins for the week")
     async def summary(self, ctx: commands.Context):
         # Invoke other command based on channel
-        if (ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID):
+        if (ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID):
             await ctx.invoke(self.bot.get_command('summary1'))
-        elif (ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID):
+        elif (ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID):
             await ctx.invoke(self.bot.get_command('summary2'))
         else:
             await ctx.send("Please either send this command in a dedicated channel or use the summary1 or summary2 commands")
@@ -880,7 +868,7 @@ class Broadcast(commands.Cog):
         while response:
             response = r.get(
                 f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
-                headers=headers_hd1,
+                headers=cogs.shared.HEADERS_HD1,
             ).json()["items"]
             print(page)
             for spin in response:
@@ -929,7 +917,7 @@ class Broadcast(commands.Cog):
         while response:
             response = r.get(
                 f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
-                headers=headers_hd2,
+                headers=cogs.shared.HEADERS_HD2,
             ).json()["items"]
             print(page)
             for spin in response:
@@ -958,3 +946,4 @@ class Broadcast(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Broadcast(bot))
+    reload(cogs.shared)
