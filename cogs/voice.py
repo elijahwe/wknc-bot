@@ -7,16 +7,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import discord.ui
-import os
+from importlib import reload
 import youtube_dl
 
 import cogs.shared
 
-HD1_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("HD1_DISCORD_TEXT_CHANNEL_ID"))
-HD2_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("HD2_DISCORD_TEXT_CHANNEL_ID"))
-HD1_DISCORD_VOICE_CHANNEL_ID = int(os.getenv("HD1_DISCORD_VOICE_CHANNEL_ID"))
-HD2_DISCORD_VOICE_CHANNEL_ID = int(os.getenv("HD2_DISCORD_VOICE_CHANNEL_ID"))
-DEV_SERVER_DISCORD_ID = int(os.getenv("DEV_SERVER_DISCORD_ID"))
 
 # Setup for ytdl and ffmpeg
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -75,13 +70,13 @@ class Voice(commands.Cog):
                     await self.bot.voice_clients[0].disconnect()
 
                     # If left HD1 voice, send message in HD1 text
-                    if before.channel.id == HD1_DISCORD_VOICE_CHANNEL_ID:
-                        hd1_textchannel = self.bot.get_channel(HD1_DISCORD_TEXT_CHANNEL_ID)
+                    if before.channel.id == cogs.shared.HD1_DISCORD_VOICE_CHANNEL_ID:
+                        hd1_textchannel = self.bot.get_channel(cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID)
                         async with hd1_textchannel.typing():
                             await hd1_textchannel.send("All users have left the voice channel, disconnecting")
                     # If left HD2 voice, send message in HD2 text
-                    if before.channel.id == HD2_DISCORD_VOICE_CHANNEL_ID:
-                        hd2_textchannel = self.bot.get_channel(HD2_DISCORD_TEXT_CHANNEL_ID)
+                    if before.channel.id == cogs.shared.HD2_DISCORD_VOICE_CHANNEL_ID:
+                        hd2_textchannel = self.bot.get_channel(cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID)
                         async with hd2_textchannel.typing():
                             await hd2_textchannel.send("All users have left the voice channel, disconnecting")
                 
@@ -94,10 +89,10 @@ class Voice(commands.Cog):
         # Choose channel to join - take argument or infer from text channel, or infer from user's current voice channel
         if voicechannel:
             channel = voicechannel
-        elif ctx.channel.id == HD1_DISCORD_TEXT_CHANNEL_ID:
-            channel = self.bot.get_channel(HD1_DISCORD_VOICE_CHANNEL_ID)
-        elif ctx.channel.id == HD2_DISCORD_TEXT_CHANNEL_ID:
-            channel = self.bot.get_channel(HD2_DISCORD_VOICE_CHANNEL_ID)
+        elif ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID:
+            channel = self.bot.get_channel(cogs.shared.HD1_DISCORD_VOICE_CHANNEL_ID)
+        elif ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID:
+            channel = self.bot.get_channel(cogs.shared.HD2_DISCORD_VOICE_CHANNEL_ID)
         elif ctx.author.voice:
             channel = ctx.author.voice.channel
         else:
@@ -118,7 +113,7 @@ class Voice(commands.Cog):
                         player = await self.YTDLSource.from_url(cogs.shared.HD1_WEBSTREAM_URL, loop=self.bot.loop, stream=True)
                         ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
                         transbug = None
-                        emojis = self.bot.get_guild(DEV_SERVER_DISCORD_ID).emojis
+                        emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
                         for emoji in emojis:
                             if emoji.name == "transbug":
                                 transbug = emoji
@@ -129,7 +124,7 @@ class Voice(commands.Cog):
                         player = await self.YTDLSource.from_url(cogs.shared.HD2_WEBSTREAM_URL, loop=self.bot.loop, stream=True)
                         ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
                         transbug = None
-                        emojis = self.bot.get_guild(DEV_SERVER_DISCORD_ID).emojis
+                        emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
                         for emoji in emojis:
                             if emoji.name == "transbug":
                                 transbug = emoji
@@ -170,3 +165,4 @@ class Voice(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
+    reload(cogs.shared)
