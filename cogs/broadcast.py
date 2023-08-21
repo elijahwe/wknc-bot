@@ -118,7 +118,7 @@ def is_yesterday(date: str) -> bool:
     )
     return indate < nextmidnight and lastmidnight <= indate
 
-def next_show(upcoming_shows: list, channel: int = 1) -> dict:
+def get_next_show(upcoming_shows: list, channel: int = 1) -> dict:
     """Takes a list of shows (ascending) and returns the next scheduled show that is not automated
     Args:
         upcoming_shows (list): A list of dicts, each representing a show
@@ -181,48 +181,41 @@ class Broadcast(commands.Cog):
     @commands.hybrid_command(name="djset", brief="All songs played on the last, non DJ AV show")
     @app_commands.describe(djname="(optional) Specify a DJ whose last set you want to see")
     async def djset(self, ctx: commands.Context, *, djname: str = None):
-        async with ctx.typing():
-            # Invoke other command based on channel
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('djset1'), djname=djname)
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('djset2'), djname=djname)
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the djset1 or djset2 commands")
+        if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
+            await self.djset_query(ctx, channel_num=1, djname=djname)
+        elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
+            await self.djset_query(ctx, channel_num=2, djname=djname)
+        else:
+            await ctx.send("Please either send this command in a dedicated channel or use the djset1 or djset2 commands")
 
     @commands.hybrid_command(name="djset1", brief="All songs played on the last, non DJ AV show on HD-1")
     @app_commands.describe(djname="(optional) Specify a DJ whose last set you want to see")
     async def djset_hd1(self, ctx: commands.Context, *, djname: str = None):
-        async with ctx.typing():
-            # Get embed - choose function based on whether djname argument was entered
-            if not djname:
-                embed = await self.last_set_query(ctx, cogs.shared.HEADERS_HDX[1], cogs.shared.SPINITRON_URL_CHANNEL_HDX[1], cogs.shared.DJ_AV_SPINITRON_ID_HDX[1])
-            else:
-                embed = await self.dj_last_set_query(ctx, cogs.shared.HEADERS_HDX[1], cogs.shared.SPINITRON_URL_CHANNEL_HDX[1], djname)
-
-            if (embed):
-                await ctx.send(embed=embed)
+        await self.djset_query(ctx, channel_num=1, djname=djname)
 
     @commands.hybrid_command(name="djset2", brief="All songs played on the last, non DJ AV show on HD-2")
     @app_commands.describe(djname="(optional) Specify a DJ whose last set you want to see")
     async def djset_hd2(self, ctx: commands.Context, *, djname: str = None):
+        await self.djset_query(ctx, channel_num=2, djname=djname)
+    
+    async def djset_query(self, ctx: commands.Context, channel_num, djname):
         async with ctx.typing():
             # Get embed - choose function based on whether djname argument was entered
             if not djname:
-                embed = await self.last_set_query(ctx, cogs.shared.HEADERS_HDX[2], cogs.shared.SPINITRON_URL_CHANNEL_HDX[2], cogs.shared.DJ_AV_SPINITRON_ID_HDX[2])
+                embed = await self.last_set_embed_builder(ctx, channel_num)
             else:
-                embed = await self.dj_last_set_query(ctx, cogs.shared.HEADERS_HDX[2], cogs.shared.SPINITRON_URL_CHANNEL_HDX[2], djname)
+                embed = await self.dj_last_set_embed_builder(ctx, channel_num, djname)
 
             if (embed):
                 await ctx.send(embed=embed)
 
-    async def last_set_query(self, ctx: commands.Context, headers, channel, av_num):
+    async def last_set_embed_builder(self, ctx: commands.Context, channel_num):
         # Get list of last playlists from Spinitron
-        last_playlists = r.get(f"https://spinitron.com/api/playlists?count={cogs.shared.LAST_SET_RANGE}", headers=headers).json()["items"]
+        last_playlists = r.get(f"https://spinitron.com/api/playlists?count={cogs.shared.LAST_SET_RANGE}", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"]
 
         # Count up to closest non AV set
         i = 0
-        while (av_num in last_playlists[i]["_links"]["persona"]["href"] and i < cogs.shared.LAST_SET_RANGE - 1):
+        while (cogs.shared.DJ_AV_SPINITRON_ID_HDX[channel_num] in last_playlists[i]["_links"]["persona"]["href"] and i < cogs.shared.LAST_SET_RANGE - 1):
             i += 1
 
         # If limit was hit, say no sets found
@@ -230,42 +223,37 @@ class Broadcast(commands.Cog):
             await ctx.send("No recent dj sets detected")
         else:
             lastset = last_playlists[i]
-            return self.make_set_embed(lastset, headers, channel)
+            return self.make_set_embed(lastset, channel_num)
 
         return None
 
-    async def dj_last_set_query(self, ctx: commands.Context, headers, channel, dj_name):
-        # Interpret channel
-        if (channel == cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]):
-            channelnum = 2
-        else:
-            channelnum = 1
+    async def dj_last_set_embed_builder(self, ctx: commands.Context, channel_num, dj_name):
 
         # Get Spinitron persona page of the DJ
         response = r.get(
             "https://spinitron.com/api/personas?name={}".format(dj_name.replace(" ", "%20")),
-            headers=headers,
+            headers=cogs.shared.HEADERS_HDX[channel_num],
         ).json()["items"]
         
         response_message: str
         if not response:
-            await ctx.send(f"Huh, I couldn't seem to find {dj_name} on HD-{channelnum}. Are you sure that's the right DJ Name?")
+            await ctx.send(f"Huh, I couldn't seem to find {dj_name} on HD-{channel_num}. Are you sure that's the right DJ Name?")
         else:
             spinitron_id = response[0]["id"]
 
             # Get DJ's last playlists
-            last_playlists = r.get(f"https://spinitron.com/api/playlists?persona_id={spinitron_id}", headers=headers).json()["items"]
+            last_playlists = r.get(f"https://spinitron.com/api/playlists?persona_id={spinitron_id}", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"]
 
             # Make embed from most recent playlist
             if (last_playlists):
-                return self.make_set_embed(last_playlists[0], headers, channel)
+                return self.make_set_embed(last_playlists[0], channel_num)
             
             # If no playlists, say so
-            await ctx.send(f"It doesn't look like {dj_name} has had any HD-{channelnum} sets yet!")
+            await ctx.send(f"It doesn't look like {dj_name} has had any HD-{channel_num} sets yet!")
 
         return None
 
-    def make_set_embed(self, lastset, headers, channel):
+    def make_set_embed(self, lastset, channel_num):
         # Get beginning time of set and parse
         utcstring = lastset["start"]
         starttime =  parser.parse(lastset["start"]).astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
@@ -309,7 +297,7 @@ class Broadcast(commands.Cog):
             timemessage += "am"
 
         # Get list of songs from the set (first page)
-        set_items = r.get(lastset["_links"]["spins"]["href"], headers=headers).json()["items"]
+        set_items = r.get(lastset["_links"]["spins"]["href"], headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"]
 
         # Generate list of spin strings
         set_spin_list = []
@@ -335,7 +323,7 @@ class Broadcast(commands.Cog):
                 break
 
             # Get next page of songs
-            set_items = r.get(lastset["_links"]["spins"]["href"]+f"&page={j}", headers=headers).json()["items"]
+            set_items = r.get(lastset["_links"]["spins"]["href"]+f"&page={j}", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"]
         
         # Put together string of songs, with time at the beginning
         set_spins_string = "".join(set_spin_list)
@@ -352,7 +340,7 @@ class Broadcast(commands.Cog):
         embed = Embed(
             title=lastset["title"], description=message, color=cogs.shared.EMBED_COLOR
         ).set_author(
-            name=get_dj_name(str(spinitron_id), headers), url=f"https://spinitron.com/{channel}/dj/{spinitron_id}"
+            name=get_dj_name(str(spinitron_id), cogs.shared.HEADERS_HDX[channel_num]), url=f"https://spinitron.com/{cogs.shared.SPINITRON_URL_CHANNEL_HDX[channel_num]}/dj/{spinitron_id}"
         )
         if img_art:
             embed.set_thumbnail(url=img_art)
@@ -362,90 +350,78 @@ class Broadcast(commands.Cog):
 
     @commands.hybrid_command(name="lp", brief="The last played song")
     async def last_played(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Invoke other command based on channel
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('lp1'))
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('lp2'))
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the lp1 or lp2 commands")
+        if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
+            await self.last_played_query(ctx, channel_num=1)
+        elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
+            await self.last_played_query(ctx, channel_num=2)
+        else:
+            await ctx.send("Please either send this command in a dedicated channel or use the lp1 or lp2 commands")
 
     @commands.hybrid_command(name="lp1", brief="The last played song on HD-1")
     async def last_played_hd1(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Get embed and send
-            embed = await self.last_played_query(cogs.shared.HEADERS_HDX[1], cogs.shared.SPINITRON_URL_CHANNEL_HDX[1])
-            await ctx.send("The previous song on HD-1 was:", embed=embed)
+        await self.last_played_query(ctx, channel_num=1)
 
     @commands.hybrid_command(name="lp2", brief="The last played song on HD-2")
     async def last_played_hd2(self, ctx: commands.Context):
+        await self.last_played_query(ctx, channel_num=2)
+
+    async def last_played_query(self, ctx: commands.Context, channel_num):
         async with ctx.typing():
-            # Get embed and send
-            embed = await self.last_played_query(cogs.shared.HEADERS_HDX[2], cogs.shared.SPINITRON_URL_CHANNEL_HDX[2])
-            await ctx.send("The previous song on HD-2 was:", embed=embed)
+            # Get last spin
+            last_spin = r.get("https://spinitron.com/api/spins?count=2", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"][1]
 
-    async def last_played_query(self, headers, channel):
-        # Get last spin
-        last_spin = r.get("https://spinitron.com/api/spins?count=2", headers=headers).json()["items"][1]
+            # Get Spinitron ID of DJ
+            spinitron_id = r.get(
+                "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
+                headers=cogs.shared.HEADERS_HDX[channel_num],
+            ).json()["persona_id"]
 
-        # Get Spinitron ID of DJ
-        spinitron_id = r.get(
-            "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
-            headers=headers,
-        ).json()["persona_id"]
+            # Get album art of spin
+            img_art = get_album_art(last_spin)
 
-        # Get album art of spin
-        img_art = get_album_art(last_spin)
+            # Generate embed
+            embed = Embed(
+                title=last_spin["song"], description=last_spin["artist"], color=cogs.shared.EMBED_COLOR
+            ).set_author(
+                name=get_dj_name(str(spinitron_id), cogs.shared.HEADERS_HDX[channel_num]), url=f"https://spinitron.com/{cogs.shared.SPINITRON_URL_CHANNEL_HDX[channel_num]}/dj/{spinitron_id}"
+            )
+            if img_art:
+                embed.set_image(url=img_art)
 
-        # Generate embed
-        embed = Embed(
-            title=last_spin["song"], description=last_spin["artist"], color=cogs.shared.EMBED_COLOR
-        ).set_author(
-            name=get_dj_name(str(spinitron_id), headers), url=f"https://spinitron.com/{channel}/dj/{spinitron_id}"
-        )
-        if img_art:
-            embed.set_image(url=img_art)
-        
-        return embed
+            await ctx.send(f"The previous song on HD-{channel_num} was:", embed=embed)
 
 
     @commands.hybrid_command(name="lps", brief="List of the last played songs")
     async def last_played_songs(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Invoke other command based on channel
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('lps1'))
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('lps2'))
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the lps1 or lps2 commands")
+        if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
+            await self.last_played_songs_query(ctx, channel_num=1)
+        elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
+            await self.last_played_songs_query(ctx, channel_num=2)
+        else:
+            await ctx.send("Please either send this command in a dedicated channel or use the lps1 or lps2 commands")
 
     @commands.hybrid_command(name="lps1", brief="List of the last played songs on HD-1")
     async def last_played_songs_hd1(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Send thinking message to be shown while generating embed
-            message = await ctx.send(":thinking: thinking...")
-            # Generate and send embed (with button)
-            embed = self.last_played_songs_query(cogs.shared.HEADERS_HDX[1], cogs.shared.SPINITRON_URL_CHANNEL_HDX[1], 1)
-            await message.edit(content=f"The last played songs on HD-1:", embed=embed, view=self.LPS_Button(outer_instance=self, headers=cogs.shared.HEADERS_HDX[1], channel=cogs.shared.SPINITRON_URL_CHANNEL_HDX[1], message=message))
+        await self.last_played_songs_query(ctx, channel_num=1)
 
     @commands.hybrid_command(name="lps2", brief="List of the last played songs on HD-2")
     async def last_played_songs_hd2(self, ctx: commands.Context):
-        async with ctx.typing():
+        await self.last_played_songs_query(ctx, channel_num=2)
+
+    async def last_played_songs_query(self, ctx: commands.Context, channel_num):
+        async with ctx.typing(): 
             # Send thinking message to be shown while generating embed
             message = await ctx.send(":thinking: thinking...")
-            # Generate and send embed (with button)
-            embed = self.last_played_songs_query(cogs.shared.HEADERS_HDX[2], cogs.shared.SPINITRON_URL_CHANNEL_HDX[2], 1)
-            await message.edit(content=f"The last played songs on HD-2:", embed=embed, view=self.LPS_Button(outer_instance=self, headers=cogs.shared.HEADERS_HDX[2], channel=cogs.shared.SPINITRON_URL_CHANNEL_HDX[2], message=message))
+        # Generate and send embed (with button)
+        embed = self.last_played_songs_embed_builder(channel_num, page=1)
+        await message.edit(content=f"The last played songs on HD-{channel_num}:", embed=embed, view=self.LPS_Button(outer_instance=self, channel_num=channel_num, message=message))
 
     class LPS_Button(discord.ui.View):
         """Class to use as the view in the lps command response message (implements button)"""
-        def __init__(self, outer_instance, headers, channel, message):
+        def __init__(self, outer_instance, channel_num, message):
             super().__init__()
             self.outer_instance = outer_instance
-            self.headers = headers
-            self.channel = channel
+            self.channel_num = channel_num
             self.page = 1
             self.timeout=cogs.shared.BUTTON_TIMEOUT
             self.message = message
@@ -473,7 +449,7 @@ class Broadcast(commands.Cog):
             await interaction.edit_original_response(view=self, embed=thinkingEmbed)
 
             # Update with text for the new page
-            embed = self.last_played_songs_query(headers=self.headers, channel=self.channel, page=self.page)
+            embed = self.last_played_songs_embed_builder(channel_num=self.channel_num, page=self.page)
             await interaction.edit_original_response(view=self, embed=embed)
         
         # Forward button
@@ -500,12 +476,12 @@ class Broadcast(commands.Cog):
             await interaction.edit_original_response(view=self, embed=thinkingEmbed)
 
             # Update with text for the new page
-            embed = self.outer_instance.last_played_songs_query(headers=self.headers, channel=self.channel, page=self.page)
+            embed = self.outer_instance.last_played_songs_embed_builder(channel_num=self.channel_num, page=self.page)
             await interaction.edit_original_response(view=self, embed=embed)
 
-    def last_played_songs_query(self, headers, channel, page):
+    def last_played_songs_embed_builder(self, channel_num, page):
         # Get list of last spins (with given page)
-        last_spins = r.get(f"https://spinitron.com/api/spins?count=10&page={page}", headers=headers).json()["items"]
+        last_spins = r.get(f"https://spinitron.com/api/spins?count=10&page={page}", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"]
 
         # Get list of strings for last played songs
         last_played_list = []
@@ -514,12 +490,12 @@ class Broadcast(commands.Cog):
             # Get Spinitron ID of song
             spinitron_id = r.get(
                 "https://spinitron.com/api/playlists/{}".format(i["playlist_id"]),
-                headers=headers,
+                headers=cogs.shared.HEADERS_HDX[channel_num],
             ).json()["persona_id"]
 
             # Get name and link to their page
-            djname = get_dj_name(str(spinitron_id), headers)
-            djlink = f"https://spinitron.com/{channel}/dj/{spinitron_id}"
+            djname = get_dj_name(str(spinitron_id), cogs.shared.HEADERS_HDX[channel_num])
+            djlink = f"https://spinitron.com/{cogs.shared.SPINITRON_URL_CHANNEL_HDX[channel_num]}/dj/{spinitron_id}"
 
             # Show playing now next to the currently playing song
             nowtext = ""
@@ -549,40 +525,30 @@ class Broadcast(commands.Cog):
 
 
     @commands.hybrid_command(name="nextshow", brief="The next, non DJ AV show")
-    async def next_up(self, ctx: commands.Context):
-        # Invoke other command based on channel
-        async with ctx.typing():
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('nextshow1'))
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('nextshow2'))
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the nextshow1 or nextshow2 commands")
+    async def next_show(self, ctx: commands.Context):
+        if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
+            await self.next_show_query(ctx, channel_num=1)
+        elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
+            await self.next_show_query(ctx, channel_num=2)
+        else:
+            await ctx.send("Please either send this command in a dedicated channel or use the nextshow1 or nextshow2 commands")
 
     @commands.hybrid_command(name="nextshow1", brief="The next, non DJ AV show on HD-1")
-    async def next_up_hd1(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Find next show and send
-            upcoming_shows = r.get(
-                "https://spinitron.com/api/shows",
-                headers=cogs.shared.HEADERS_HDX[1],
-            ).json()["items"]
-            next_dj_show = next_show(upcoming_shows, 1)
-            response_message = "Coming up next is {} at {}".format(
-                next_dj_show["title"], my_parser(next_dj_show["start"], True)
-            )
-
-            await ctx.send(response_message)
+    async def next_show_hd1(self, ctx: commands.Context):
+        await self.next_show_query(ctx, channel_num=1)
 
     @commands.hybrid_command(name="nextshow2", brief="The next, non DJ AV show on HD-2")
-    async def next_up_hd2(self, ctx: commands.Context):
+    async def next_show_hd2(self, ctx: commands.Context):
+        await self.next_show_query(ctx, channel_num=2)
+
+    async def next_show_query(self, ctx: commands.Context, channel_num):
         async with ctx.typing():
             # Find next show and send
             upcoming_shows = r.get(
                 "https://spinitron.com/api/shows",
-                headers=cogs.shared.HEADERS_HDX[2],
+                headers=cogs.shared.HEADERS_HDX[channel_num],
             ).json()["items"]
-            next_dj_show = next_show(upcoming_shows, 2)
+            next_dj_show = get_next_show(upcoming_shows, channel_num)
             response_message = "Coming up next is {} at {}".format(
                 next_dj_show["title"], my_parser(next_dj_show["start"], True)
             )
@@ -592,146 +558,130 @@ class Broadcast(commands.Cog):
 
     @commands.hybrid_command(name="np", brief="The currently playing song")
     async def now_playing(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Invoke other command based on channel
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('np1'))
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('np2'))
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the np1 or np2 commands")
+        if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
+            await self.now_playing_query(ctx, channel_num=1)
+        elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
+            await self.now_playing_query(ctx, channel_num=2)
+        else:
+            await ctx.send("Please either send this command in a dedicated channel or use the np1 or np2 commands")
 
     @commands.hybrid_command(name="np1", brief="The song currently playing on HD-1")
     async def now_playing_hd1(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Get embed and send
-            embed = await self.now_playing_query(cogs.shared.HEADERS_HDX[1], cogs.shared.SPINITRON_URL_CHANNEL_HDX[1])
-            await ctx.send(embed=embed)
+        await self.now_playing_query(ctx, channel_num=1)
 
     @commands.hybrid_command(name="np2", brief="The song currently playing on HD-2")
     async def now_playing_hd2(self, ctx: commands.Context):
+        await self.now_playing_query(ctx, channel_num=2)
+
+    async def now_playing_query(self, ctx: commands.Context, channel_num):
         async with ctx.typing():
-            # Get embed and send
-            embed = await self.now_playing_query(cogs.shared.HEADERS_HDX[2], cogs.shared.SPINITRON_URL_CHANNEL_HDX[2])
+            # Get last spin and spinitron id of DJ
+            last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"][0]
+            spinitron_id = r.get(
+                "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
+                headers=cogs.shared.HEADERS_HDX[channel_num],
+            ).json()["persona_id"]
+
+            img_art = get_album_art(last_spin)
+
+            # Generate embed and send
+            embed = Embed(
+                title=last_spin["song"], description=last_spin["artist"], color=cogs.shared.EMBED_COLOR# Add url?
+            ).set_author(
+                name=get_dj_name(str(spinitron_id), cogs.shared.HEADERS_HDX[channel_num]), url=f"https://spinitron.com/{cogs.shared.SPINITRON_URL_CHANNEL_HDX[channel_num]}/dj/{spinitron_id}"
+            )
+            if img_art:
+                embed.set_image(url=img_art)
+            
             await ctx.send(embed=embed)
-
-    async def now_playing_query(self, headers, channel):
-        # Get last spin and spinitron id of DJ
-        last_spin = r.get("https://spinitron.com/api/spins?count=1", headers=headers).json()["items"][0]
-        spinitron_id = r.get(
-            "https://spinitron.com/api/playlists/{}".format(last_spin["playlist_id"]),
-            headers=headers,
-        ).json()["persona_id"]
-
-        img_art = get_album_art(last_spin)
-
-        # Generate embed and send
-        embed = Embed(
-            title=last_spin["song"], description=last_spin["artist"], color=cogs.shared.EMBED_COLOR# Add url?
-        ).set_author(
-            name=get_dj_name(str(spinitron_id), headers), url=f"https://spinitron.com/{channel}/dj/{spinitron_id}"
-        )
-        if img_art:
-            embed.set_image(url=img_art)
-        return embed
 
 
     @commands.hybrid_command(name="schedule", brief="The list of scheduled shows for the day")
     @app_commands.describe(day="(optional) Specify a day of the week or a date (MM/DD/YY)")
     async def schedule(self, ctx: commands.Context, *, day: str = None):
-        async with ctx.typing():
-            # Invoke other command based on channel
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('schedule1'), day=day)
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('schedule2'), day=day)
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the schedule1 or schedule2 commands")
+        if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
+            await self.schedule_query(ctx, channel_num=1, day=day)
+        elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
+            await self.schedule_query(ctx, channel_num=2, day=day)
+        else:
+            await ctx.send("Please either send this command in a dedicated channel or use the schedule1 or schedule2 commands")
 
     @commands.hybrid_command(name="schedule1", brief="The list of scheduled shows for the day on HD-1")
     @app_commands.describe(day="(optional) Specify a day of the week or a date (MM/DD/YY)")
     async def schedule_hd1(self, ctx: commands.Context, *, day: str = None):
-        async with ctx.typing():
-            await self.get_schedule(ctx, day, 1)
+        await self.schedule_query(ctx, channel_num=1, day=day)
 
     @commands.hybrid_command(name="schedule2", brief="The list of scheduled shows for the day on HD-2")
     @app_commands.describe(day="(optional) Specify a day of the week or a date (MM/DD/YY)")
     async def schedule_hd2(self, ctx: commands.Context, *, day: str = None):
+        await self.schedule_query(ctx, channel_num=2, day=day)
+
+    async def schedule_query(self, ctx: commands.Context, channel_num, day: str):
         async with ctx.typing():
-            await self.get_schedule(ctx, day, 2)
+            embed: Embed
 
-    async def get_schedule(self, ctx: commands.Context, day: str, channelnum: int):
-        embed: Embed
+            # If day argument, parse 
+            if day:
+                daylower = day.lower()
 
-       # If day argument, parse 
-        if day:
-            daylower = day.lower()
+                date: datetime.date = None
 
-            date: datetime.date = None
+                try:
+                    # Try to interpret as date
+                    date = datetime.strptime(daylower,"%m/%d/%y")
+                    if date <= datetime.today():
+                        await ctx.send("Please enter only future dates")
+                        return
+                except:
+                    # Check if it is a valid match for a weekday
+                    if (daylower in cogs.shared.VALID_WEEKDAYS):
+                        # Interpret what weekday from starting letters
+                        weekday: int
+                        if re.search("^m", daylower):
+                            weekday = 0
+                        elif re.search("^tu", daylower):
+                            weekday = 1
+                        elif re.search("^w", daylower):
+                            weekday = 2
+                        elif re.search("^th", daylower):
+                            weekday = 3
+                        elif re.search("^f", daylower):
+                            weekday = 4
+                        elif re.search("^sa", daylower):
+                            weekday = 5
+                        elif re.search("^su", daylower):
+                            weekday = 6
+                        else:
+                            await ctx.send("something went wrong that shouldn't have gone wrong lol can you @elijah and let me know")
+                        
+                        # Get days until the next occurrence of this weekday
+                        daysuntil = (weekday - datetime.today().weekday() + 7) % 7
+                        if daysuntil == 0:
+                            daysuntil = 7
+                        
+                        # Get date by adding that to today (date of next occurrence)
+                        date = datetime.today() + timedelta(days = daysuntil)
 
-            try:
-                # Try to interpret as date
-                date = datetime.strptime(daylower,"%m/%d/%y")
-                if date <= datetime.today():
-                    await ctx.send("Please enter only future dates")
-                    return
-            except:
-                # Check if it is a valid match for a weekday
-                if (daylower in cogs.shared.VALID_WEEKDAYS):
-                    # Interpret what weekday from starting letters
-                    weekday: int
-                    if re.search("^m", daylower):
-                        weekday = 0
-                    elif re.search("^tu", daylower):
-                        weekday = 1
-                    elif re.search("^w", daylower):
-                        weekday = 2
-                    elif re.search("^th", daylower):
-                        weekday = 3
-                    elif re.search("^f", daylower):
-                        weekday = 4
-                    elif re.search("^sa", daylower):
-                        weekday = 5
-                    elif re.search("^su", daylower):
-                        weekday = 6
                     else:
-                        await ctx.send("something went wrong that shouldn't have gone wrong lol can you @elijah and let me know")
-                    
-                    # Get days until the next occurrence of this weekday
-                    daysuntil = (weekday - datetime.today().weekday() + 7) % 7
-                    if daysuntil == 0:
-                        daysuntil = 7
-                    
-                    # Get date by adding that to today (date of next occurrence)
-                    date = datetime.today() + timedelta(days = daysuntil)
-
+                        await ctx.send("Please enter either a day of the week or a date in the format of MM/DD/YY")
+                        return
+                
+                # Generate embed (day specified)
+                embed = self.day_show_schedule(channel_num, date)
+                if (embed):
+                    await ctx.send(embed = embed)
                 else:
-                    await ctx.send("Please enter either a day of the week or a date in the format of MM/DD/YY")
-                    return
-            
-            # Generate embed (day specified)
-            embed = self.day_show_schedule(channelnum, date)
-            if (embed):
-                await ctx.send(embed = embed)
-            else:
-                await ctx.send("It doesn't look like there are any shows that day")
+                    await ctx.send("It doesn't look like there are any shows that day")
 
-        else:
-            # Generate embed for today
-            embed = self.upcoming_show_schedule(channelnum)
-            if (embed):
-                await ctx.send(embed = embed)
             else:
-                await ctx.send("No more shows today! Check back tomorrow")
+                # Generate embed for today
+                embed = self.upcoming_show_schedule(channel_num)
+                if (embed):
+                    await ctx.send(embed = embed)
+                else:
+                    await ctx.send("No more shows today! Check back tomorrow")
 
-    def day_show_schedule(self, channel: int, date: datetime.date):
-        # Interpret channel
-        if channel == 2:
-            chheaders = cogs.shared.HEADERS_HDX[2]
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]
-        else:
-            chheaders = cogs.shared.HEADERS_HDX[1]
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[1]
+    def day_show_schedule(self, channel_num, date: datetime.date):
         
         # Get beginning and end of the day as datetimes and strings
         starttime = datetime.combine(date, datetime.min.time())
@@ -742,7 +692,7 @@ class Broadcast(commands.Cog):
         # Get list of upcoming shows within that day
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows?count=24&start={}&end={}".format(starttimestr, endtimestr),
-            headers=chheaders,
+            headers=cogs.shared.HEADERS_HDX[channel_num],
         ).json()["items"]
 
         embed = Embed()
@@ -750,40 +700,27 @@ class Broadcast(commands.Cog):
         # Generate schedule - list of strings, each with a non AV show
         schedule = []
         for show in upcoming_shows:
-            if not is_av(show, channel):
-                persona_data = r.get(show["_links"]["personas"][0]["href"], headers=chheaders).json()
+            if not is_av(show, channel_num):
+                persona_data = r.get(show["_links"]["personas"][0]["href"], headers=cogs.shared.HEADERS_HDX[channel_num]).json()
                 show_persona = persona_data["name"]
                 persona_id = persona_data["id"]
                 schedule.append(
-                    "`{}-{}`  {}: [{}]({})".format(my_parser(show["start"], False, False), my_parser(show["end"], False, True), show["title"], show_persona, f"https://spinitron.com/{channelstr}/dj/{persona_id}")
+                    "`{}-{}`  {}: [{}]({})".format(my_parser(show["start"], False, False), my_parser(show["end"], False, True), show["title"], show_persona, f"https://spinitron.com/{cogs.shared.SPINITRON_URL_CHANNEL_HDX[channel_num]}/dj/{persona_id}")
                 )
         
         # Finish embed
         if schedule:
-            embed.title = f"{cogs.shared.WEEKDAY_LIST[date.weekday()]}'s Schedule (HD-{channel})"
+            embed.title = f"{cogs.shared.WEEKDAY_LIST[date.weekday()]}'s Schedule (HD-{channel_num})"
             embed.description = "\n".join(schedule)
             embed.color = cogs.shared.EMBED_COLOR
 
         return embed
 
-    def upcoming_show_schedule(self, channel: int = 1) -> str:
-        """Takes a list of shows and returns the ones that are both hosted by a human and occur in the future
-        Args:
-            upcoming_shows (list): A list of shows, taken from the Spinitron API
-            channel (int): An int representing a WKNC channel: 1 for HD-1, 2 for HD-2
-        Returns:
-            str: A formatted string of upcoming shows or a message indicating there are no more shows
-        """
-        if channel == 2:
-            chheaders = cogs.shared.HEADERS_HDX[2]
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]
-        else:
-            chheaders = cogs.shared.HEADERS_HDX[1]
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[1]
+    def upcoming_show_schedule(self, channel_num):
 
         upcoming_shows = r.get(
             "https://spinitron.com/api/shows",
-            headers=chheaders,
+            headers=cogs.shared.HEADERS_HDX[channel_num],
         ).json()["items"]
 
         embed = Embed()
@@ -792,15 +729,15 @@ class Broadcast(commands.Cog):
         for show in upcoming_shows:
             if not is_today(show["start"]):
                 break
-            if not is_av(show, channel):
-                persona_data = r.get(show["_links"]["personas"][0]["href"], headers=chheaders).json()
+            if not is_av(show, channel_num):
+                persona_data = r.get(show["_links"]["personas"][0]["href"], headers=cogs.shared.HEADERS_HDX[channel_num]).json()
                 show_persona = persona_data["name"]
                 persona_id = persona_data["id"]
                 schedule.append(
-                    "`{}-{}`  {}: [{}]({})".format(my_parser(show["start"], False, False), my_parser(show["end"], False), show["title"], show_persona, f"https://spinitron.com/{channelstr}/dj/{persona_id}")
+                    "`{}-{}`  {}: [{}]({})".format(my_parser(show["start"], False, False), my_parser(show["end"], False), show["title"], show_persona, f"https://spinitron.com/{cogs.shared.SPINITRON_URL_CHANNEL_HDX[channel_num]}/dj/{persona_id}")
                 )
         if schedule:
-            embed.title = f"Today's Schedule (HD-{channel})"
+            embed.title = f"Today's Schedule (HD-{channel_num})"
             embed.description = "\n".join(schedule)
             embed.color = cogs.shared.EMBED_COLOR
 
@@ -809,112 +746,69 @@ class Broadcast(commands.Cog):
 
     @commands.hybrid_command(name="summary", brief="Gets a summary of the logged spins for the week")
     async def summary(self, ctx: commands.Context):
-        # Invoke other command based on channel
         if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-            await ctx.invoke(self.bot.get_command('summary1'))
+            await self.summary_query(ctx, channel_num=1)
         elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-            await ctx.invoke(self.bot.get_command('summary2'))
+            await self.summary_query(ctx, channel_num=2)
         else:
             await ctx.send("Please either send this command in a dedicated channel or use the summary1 or summary2 commands")
 
     @commands.hybrid_command(name="summary1", brief="Gets a summary of the logged spins for the week on HD-1")
     async def summary_hd1(self, ctx: commands.Context, *, params: summary_param_converter = summary_param_converter.defaults()):
-        days = params["days"]
-        start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%x")
-        show_id = ShowID[params["show"].replace(" ", "_").upper()]
-        by = params["by"]
-
-        if days > 30:
-            await ctx.send(
-                "For summaries more than 30 days please use https://spinitron.com/m/spin/chart"
-            )
-            return
-
-        page = 1
-        response = True
-        song_dict = {}
-        artist_dict = {}
-
-        message = await ctx.send("Just a moment, let me get that for you...")
-
-        while response:
-            response = r.get(
-                f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
-                headers=cogs.shared.HEADERS_HDX[1],
-            ).json()["items"]
-            print(page)
-            for spin in response:
-                key = "{} by {}".format(spin["song"], spin["artist"])
-                artist = spin["artist"]
-                if key not in song_dict:
-                    song_dict[key] = 0
-                    artist_dict[artist] = 0
-                song_dict[key] += 1
-                artist_dict[artist] += 1
-            page += 1
-
-        if by == "artist":
-            counter = Counter(artist_dict).most_common(params["top"])
-        else:
-            counter = Counter(song_dict).most_common(params["top"])
-
-        summary_list = []
-        for key, value in counter:
-            summary_list.append(f"    -{key} | {value} times")
-        response_message = f"**Top {by}s of the past {days} days**\n" + "\n".join(summary_list)
-
-        await message.edit(content=response_message)
-        await ctx.send(ctx.author.mention)
+        await self.summary_query(ctx, channel_num=1, params=params)
 
     @commands.hybrid_command(name="summary2", brief="Gets a summary of the logged spins for the week on HD-2")
     async def summary_hd2(self, ctx: commands.Context, *, params: summary_param_converter = summary_param_converter.defaults()):
-        days = params["days"]
-        start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%x")
-        show_id = ShowID[params["show"].replace(" ", "_").upper()]
-        by = params["by"]
+        await self.summary_query(ctx, channel_num=2, params=params)
 
-        if days > 30:
-            await ctx.send(
-                "For summaries more than 30 days please use https://spinitron.com/m/spin/chart"
-            )
-            return
+    async def summary_query(self, ctx: commands.Context, channel_num, params):
+        async with ctx.typing():
+            days = params["days"]
+            start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%x")
+            show_id = ShowID[params["show"].replace(" ", "_").upper()]
+            by = params["by"]
 
-        page = 1
-        response = True
-        song_dict = {}
-        artist_dict = {}
+            if days > 30:
+                await ctx.send(
+                    "For summaries more than 30 days please use https://spinitron.com/m/spin/chart"
+                )
+                return
 
-        message = await ctx.send("Just a moment, let me get that for you...")
+            page = 1
+            response = True
+            song_dict = {}
+            artist_dict = {}
 
-        while response:
-            response = r.get(
-                f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
-                headers=cogs.shared.HEADERS_HDX[2],
-            ).json()["items"]
-            print(page)
-            for spin in response:
-                key = "{} by {}".format(spin["song"], spin["artist"])
-                artist = spin["artist"]
-                if key not in song_dict:
-                    song_dict[key] = 0
-                    artist_dict[artist] = 0
-                song_dict[key] += 1
-                artist_dict[artist] += 1
-            page += 1
+            message = await ctx.send("Just a moment, let me get that for you...")
 
-        if by == "artist":
-            counter = Counter(artist_dict).most_common(params["top"])
-        else:
-            counter = Counter(song_dict).most_common(params["top"])
+            while response:
+                response = r.get(
+                    f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
+                    headers=cogs.shared.HEADERS_HDX[channel_num],
+                ).json()["items"]
+                print(page)
+                for spin in response:
+                    key = "{} by {}".format(spin["song"], spin["artist"])
+                    artist = spin["artist"]
+                    if key not in song_dict:
+                        song_dict[key] = 0
+                        artist_dict[artist] = 0
+                    song_dict[key] += 1
+                    artist_dict[artist] += 1
+                page += 1
 
-        summary_list = []
-        for key, value in counter:
-            summary_list.append(f"    -{key} | {value} times")
-        response_message = f"**Top {by}s of the past {days} days**\n" + "\n".join(summary_list)
+            if by == "artist":
+                counter = Counter(artist_dict).most_common(params["top"])
+            else:
+                counter = Counter(song_dict).most_common(params["top"])
 
-        await message.edit(content=response_message)
-        await ctx.send(ctx.author.mention)
+            summary_list = []
+            for key, value in counter:
+                summary_list.append(f"    -{key} | {value} times")
+            response_message = f"**Top {by}s of the past {days} days**\n" + "\n".join(summary_list)
 
+            await message.edit(content=response_message)
+            await ctx.send(ctx.author.mention)
 
 async def setup(bot):
     await bot.add_cog(Broadcast(bot))
