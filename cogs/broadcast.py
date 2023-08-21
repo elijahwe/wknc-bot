@@ -360,34 +360,6 @@ class Broadcast(commands.Cog):
         return embed
 
 
-    @commands.hybrid_command(name="listeners", brief="The current number of webstream listeners")
-    async def listeners(self, ctx: commands.Context):
-        # Invoke other command based on channel
-        async with ctx.typing():
-            if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
-                await ctx.invoke(self.bot.get_command('listeners1'))
-            elif (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]):
-                await ctx.invoke(self.bot.get_command('listeners2'))
-            else:
-                await ctx.send("Please either send this command in a dedicated channel or use the listeners1 or listeners2 commands")
-
-    @commands.hybrid_command(name="listeners1", brief="The current number of listeners for the HD-1 webstream")
-    async def listeners_hd1(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Pull listener count
-            listenercount: int = r.get("http://173.193.205.96:2199/rpc/wknchd1/streaminfo.get").json()["data"][0]["listeners"]
-            # Send message, formatted based on singular/plural
-            await ctx.send(f"There {'are' if listenercount != 1 else 'is'} currently {listenercount} listener{'s' if listenercount != 1 else ''} on the HD-1 webstream!")
-
-    @commands.hybrid_command(name="listeners2", brief="The current number of listeners for the HD-2 webstream")
-    async def listeners_hd2(self, ctx: commands.Context):
-        async with ctx.typing():
-            # Pull listener count
-            listenercount = r.get("http://173.193.205.96:2199/rpc/wknchd2/streaminfo.get").json()["data"][0]["listeners"]
-            # Send message, formatted based on singular/plural
-            await ctx.send(f"There {'are' if listenercount != 1 else 'is'} currently {listenercount} listener{'s' if listenercount != 1 else ''} on the HD-2 webstream!")
-
-
     @commands.hybrid_command(name="lp", brief="The last played song")
     async def last_played(self, ctx: commands.Context):
         async with ctx.typing():
