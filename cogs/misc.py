@@ -4,6 +4,7 @@ Misc contains miscellaneous commands that do not fall under any other category
 """
 from bs4 import BeautifulSoup
 from datetime import datetime
+import discord
 from discord import Embed, app_commands, AllowedMentions
 from discord.ext import commands
 from importlib import reload
@@ -345,6 +346,7 @@ class Misc(commands.Cog):
     @commands.command(name="status", hidden=True)
     async def status(self, ctx: commands.Context):
         await ctx.send(cogs.shared.STATUS_MESSAGE)
+        await ctx.send(f"Discord py version {discord.__version__}")
 
 async def setup(bot):
     await bot.add_cog(Misc(bot))
