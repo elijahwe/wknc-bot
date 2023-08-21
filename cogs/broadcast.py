@@ -315,7 +315,7 @@ class Broadcast(commands.Cog):
                     hour = str(int(hour) - 12)
 
                 # Add song string to set_spin_list
-                set_spin_list.insert(0, f"`{hour}:{minute}`  {i['song']} - {i['artist']}" + "\n")
+                set_spin_list.insert(0, f"`{hour}:{minute}`  {i['song'].replace('`', '')} - {i['artist'].replace('`', '')}" + "\n")
             
             # Check for limit on pages
             j += 1
