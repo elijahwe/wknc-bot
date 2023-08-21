@@ -58,12 +58,12 @@ class Bindings(commands.Cog):
     async def bind_query(self, ctx: commands.Context, user: User, djname: str, channel: str, thirdperson: bool):
         # Interpret channel argument
         if (channel.upper() == "HD1" or channel.upper() == "HD-1" or channel.upper() == "1"):
-            headers = cogs.shared.HEADERS_HD1
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
+            headers = cogs.shared.HEADERS_HDX[1]
+            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[1]
             channelnum = 1
         elif (channel.upper() == "HD2" or channel.upper() == "HD-2" or channel.upper() == "2"):
-            headers = cogs.shared.HEADERS_HD2
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
+            headers = cogs.shared.HEADERS_HDX[2]
+            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]
             channelnum = 2
         else:
             await ctx.send("Please choose either HD-1 or HD-2 in your channel argument")
@@ -100,7 +100,7 @@ class Bindings(commands.Cog):
             spinitron_id = response[0]["id"]
 
             # If user trying to bind to DJ AV, respond appropriately
-            if (str(spinitron_id) == cogs.shared.DJ_AV_HD1_SPINITRON_ID or spinitron_id == cogs.shared.DJ_AV_HD2_SPINITRON_ID):
+            if (str(spinitron_id) == cogs.shared.DJ_AV_SPINITRON_ID_HDX[1] or spinitron_id == cogs.shared.DJ_AV_SPINITRON_ID_HDX[2]):
                 await ctx.send(
                     random.choice(
                         [
@@ -153,12 +153,12 @@ class Bindings(commands.Cog):
     async def bind_id_query(self, ctx: commands.Context, user: User, id: int, channel: str, thirdperson: bool):
         # Interpret channel argument
         if (channel.upper() == "HD1" or channel.upper() == "HD-1" or channel.upper() == "1"):
-            headers = cogs.shared.HEADERS_HD1
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
+            headers = cogs.shared.HEADERS_HDX[1]
+            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[1]
             channelnum = 1
         elif (channel.upper() == "HD2" or channel.upper() == "HD-2" or channel.upper() == "2"):
-            headers = cogs.shared.HEADERS_HD2
-            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
+            headers = cogs.shared.HEADERS_HDX[2]
+            channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]
             channelnum = 2
         else:
             await ctx.send("Please choose either HD-1 or HD-2 in your channel argument")
@@ -194,7 +194,7 @@ class Bindings(commands.Cog):
             spinitron_id = id
 
             # If user trying to bind to DJ AV, respond appropriately
-            if (str(spinitron_id) == cogs.shared.DJ_AV_HD1_SPINITRON_ID or spinitron_id == cogs.shared.DJ_AV_HD2_SPINITRON_ID):
+            if (str(spinitron_id) == cogs.shared.DJ_AV_SPINITRON_ID_HDX[1] or spinitron_id == cogs.shared.DJ_AV_SPINITRON_ID_HDX[2]):
                 await ctx.send(
                     random.choice(
                         [
@@ -297,9 +297,9 @@ class Bindings(commands.Cog):
             user_binding = whois_user(ctx.author.id)
             if user_binding:
                 if user_binding["channel"] == 2:
-                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
+                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]
                 else:
-                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
+                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[1]
                 response_message = "You're {}!\nhttps://spinitron.com/{}/dj/{}".format(
                     user_binding["dj_name"], channelstr, user_binding["spinitron_id"]
                 )
@@ -319,9 +319,9 @@ class Bindings(commands.Cog):
             user_binding = whois_user(user.id)
             if user_binding:
                 if user_binding["channel"] == 2:
-                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD2
+                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[2]
                 else:
-                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HD1
+                    channelstr = cogs.shared.SPINITRON_URL_CHANNEL_HDX[1]
                 response_message = "That's {}!\nhttps://spinitron.com/{}/dj/{}".format(
                     user_binding["dj_name"], channelstr, user_binding["spinitron_id"]
                 )
