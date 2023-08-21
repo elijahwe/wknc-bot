@@ -70,13 +70,13 @@ class Voice(commands.Cog):
                     await self.bot.voice_clients[0].disconnect()
 
                     # If left HD1 voice, send message in HD1 text
-                    if before.channel.id == cogs.shared.HD1_DISCORD_VOICE_CHANNEL_ID:
-                        hd1_textchannel = self.bot.get_channel(cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID)
+                    if before.channel.id == cogs.shared.DISCORD_VOICE_CHANNEL_ID_HDX[1]:
+                        hd1_textchannel = self.bot.get_channel(cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1])
                         async with hd1_textchannel.typing():
                             await hd1_textchannel.send("All users have left the voice channel, disconnecting")
                     # If left HD2 voice, send message in HD2 text
-                    if before.channel.id == cogs.shared.HD2_DISCORD_VOICE_CHANNEL_ID:
-                        hd2_textchannel = self.bot.get_channel(cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID)
+                    if before.channel.id == cogs.shared.DISCORD_VOICE_CHANNEL_ID_HDX[2]:
+                        hd2_textchannel = self.bot.get_channel(cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2])
                         async with hd2_textchannel.typing():
                             await hd2_textchannel.send("All users have left the voice channel, disconnecting")
                 
@@ -89,10 +89,10 @@ class Voice(commands.Cog):
         # Choose channel to join - take argument or infer from text channel, or infer from user's current voice channel
         if voicechannel:
             channel = voicechannel
-        elif ctx.channel.id == cogs.shared.HD1_DISCORD_TEXT_CHANNEL_ID:
-            channel = self.bot.get_channel(cogs.shared.HD1_DISCORD_VOICE_CHANNEL_ID)
-        elif ctx.channel.id == cogs.shared.HD2_DISCORD_TEXT_CHANNEL_ID:
-            channel = self.bot.get_channel(cogs.shared.HD2_DISCORD_VOICE_CHANNEL_ID)
+        elif ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]:
+            channel = self.bot.get_channel(cogs.shared.DISCORD_VOICE_CHANNEL_ID_HDX[1])
+        elif ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[2]:
+            channel = self.bot.get_channel(cogs.shared.DISCORD_VOICE_CHANNEL_ID_HDX[2])
         elif ctx.author.voice:
             channel = ctx.author.voice.channel
         else:
@@ -110,7 +110,7 @@ class Voice(commands.Cog):
                 if "hd" in channel.name.lower() and "1" in channel.name.lower():
                     # If joining HD1 voice, play HD1 webstream
                     async with ctx.typing():
-                        player = await self.YTDLSource.from_url(cogs.shared.HD1_WEBSTREAM_URL, loop=self.bot.loop, stream=True)
+                        player = await self.YTDLSource.from_url(cogs.shared.HEWEBSTREAM_URL_HDX[1], loop=self.bot.loop, stream=True)
                         ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
                         transbug = None
                         emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
@@ -121,7 +121,7 @@ class Voice(commands.Cog):
                 elif "hd" in channel.name.lower() and "2" in channel.name.lower():
                     # If joining HD2 voice, play HD2 webstream
                     async with ctx.typing():
-                        player = await self.YTDLSource.from_url(cogs.shared.HD2_WEBSTREAM_URL, loop=self.bot.loop, stream=True)
+                        player = await self.YTDLSource.from_url(cogs.shared.HEWEBSTREAM_URL_HDX[2], loop=self.bot.loop, stream=True)
                         ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
                         transbug = None
                         emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
