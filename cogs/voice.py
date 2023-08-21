@@ -110,7 +110,7 @@ class Voice(commands.Cog):
                 if "hd" in channel.name.lower() and "1" in channel.name.lower():
                     # If joining HD1 voice, play HD1 webstream
                     async with ctx.typing():
-                        player = await self.YTDLSource.from_url(cogs.shared.HEWEBSTREAM_URL_HDX[1], loop=self.bot.loop, stream=True)
+                        player = await self.YTDLSource.from_url(cogs.shared.WEBSTREAM_URL_HDX[1], loop=self.bot.loop, stream=True)
                         ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
                         transbug = None
                         emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
@@ -121,7 +121,7 @@ class Voice(commands.Cog):
                 elif "hd" in channel.name.lower() and "2" in channel.name.lower():
                     # If joining HD2 voice, play HD2 webstream
                     async with ctx.typing():
-                        player = await self.YTDLSource.from_url(cogs.shared.HEWEBSTREAM_URL_HDX[2], loop=self.bot.loop, stream=True)
+                        player = await self.YTDLSource.from_url(cogs.shared.WEBSTREAM_URL_HDX[2], loop=self.bot.loop, stream=True)
                         ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
                         transbug = None
                         emojis = self.bot.get_guild(cogs.shared.DEV_SERVER_DISCORD_ID).emojis
