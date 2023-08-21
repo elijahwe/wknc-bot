@@ -3,8 +3,13 @@ This module defines constants to be used by other modules
 """
 import os
 
-DJ_AV_HD1_SPINITRON_ID = "10555"
-DJ_AV_HD2_SPINITRON_ID = "69608"
+# Variables with suffix _HDX indicate that it is a dictionary, where key 1 correlates to channel HD1 and key 2 correlates to channel HD2
+DJ_AV_SPINITRON_ID_HDX = {1:"10555", 2:"69608"}
+SPINITRON_URL_CHANNEL_HDX = {1:"WKNC", 2:"WKNC-HD2"}
+HEADERS_HDX = {1:{"Authorization": "Bearer {}".format(os.getenv("SPINITRON_TOKEN_HD1"))}, 2:{"Authorization": "Bearer {}".format(os.getenv("SPINITRON_TOKEN_HD2"))}}
+WEBSTREAM_URL_HDX = {1:"https://streaming.live365.com/a45877", 2:"https://streaming.live365.com/a30009"}
+DISCORD_TEXT_CHANNEL_ID_HDX = {1:int(os.getenv("HD1_DISCORD_TEXT_CHANNEL_ID")), 2:int(os.getenv("HD2_DISCORD_TEXT_CHANNEL_ID"))}
+DISCORD_VOICE_CHANNEL_ID_HDX = {1:int(os.getenv("HD1_DISCORD_VOICE_CHANNEL_ID")), 2:int(os.getenv("HD2_DISCORD_VOICE_CHANNEL_ID"))}
 
 EMBED_COLOR = 0xC3409D
 
@@ -16,28 +21,17 @@ WEEKDAY_LIST = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturda
 LPS_RAND_THRESH = 10 #What page LPS will start having a chance of randomizing the thinking text
 LPS_RAND_POOL = 10 #1/X - Chance LPS will choose a different thinking text
 
-SPINITRON_URL_CHANNEL_HD1 = "WKNC"
-SPINITRON_URL_CHANNEL_HD2 = "WKNC-HD2"
 URL_WBB = "https://gopack.com/sports/womens-basketball/schedule" # Women's basketball schedule URL
 URL_MBB = "https://gopack.com/sports/baseball/schedule" # Men's basketball schedule URL
 
 SPORTS_HTML_CLASS_UPCOMING_GAME = "sidearm-schedule-game-upcoming" # HTML class for an upcoming game on the schedule
 SPORTS_HTML_CLASS_GAME_DATE = "sidearm-schedule-game-opponent-date" # HTML class for a game date on the schedule
-HD1_WEBSTREAM_URL = "https://streaming.live365.com/a45877"
-HD2_WEBSTREAM_URL = "https://streaming.live365.com/a30009"
 
 STATUS_MESSAGE = "2"
-
-HEADERS_HD1 = {"Authorization": "Bearer {}".format(os.getenv("SPINITRON_TOKEN_HD1"))}
-HEADERS_HD2 = {"Authorization": "Bearer {}".format(os.getenv("SPINITRON_TOKEN_HD2"))}
 
 LOCAL_TIMEZONE = "America/New_York"
 
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
-HD1_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("HD1_DISCORD_TEXT_CHANNEL_ID"))
-HD2_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("HD2_DISCORD_TEXT_CHANNEL_ID"))
-HD1_DISCORD_VOICE_CHANNEL_ID = int(os.getenv("HD1_DISCORD_VOICE_CHANNEL_ID"))
-HD2_DISCORD_VOICE_CHANNEL_ID = int(os.getenv("HD2_DISCORD_VOICE_CHANNEL_ID"))
 DEV_SERVER_DISCORD_ID = int(os.getenv("DEV_SERVER_DISCORD_ID"))
 
 BOT_CREATOR_DISCORD_ID = int(os.getenv("BOT_CREATOR_DISCORD_ID"))
