@@ -6,6 +6,9 @@
 .env
 *.db
 *.log
+*.bak
+*.dat
+*.dir
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
