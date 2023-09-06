@@ -28,8 +28,10 @@ class Bindings(commands.Cog):
     """Commands related to the binding system, linking discord users to their Spinitron DJ page"""
     def __init__(self, bot):
         self.bot = bot
-
-
+    
+    async def cog_unload(self):
+        dj_bindings.close()
+        
     @commands.command(name="clean", hidden=True)
     async def clean_bot(self, ctx: commands.Context):
         """Hidden command - Remove any bindings that are incomplete or faulty"""
