@@ -449,7 +449,7 @@ class Broadcast(commands.Cog):
             await interaction.edit_original_response(view=self, embed=thinkingEmbed)
 
             # Update with text for the new page
-            embed = self.last_played_songs_embed_builder(channel_num=self.channel_num, page=self.page)
+            embed = self.outer_instance.last_played_songs_embed_builder(channel_num=self.channel_num, page=self.page)
             await interaction.edit_original_response(view=self, embed=embed)
         
         # Forward button
