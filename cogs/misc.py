@@ -4,12 +4,14 @@ Misc contains miscellaneous commands that do not fall under any other category
 """
 from bs4 import BeautifulSoup
 from datetime import datetime
+from dateutil import parser, tz
 import discord
 from discord import Embed, app_commands, AllowedMentions
 from discord.ext import commands
 from importlib import reload
 import random
 import requests as r
+import time
 
 import cogs.shared
 
@@ -198,120 +200,89 @@ class Misc(commands.Cog):
                     await ctx.send("Please enter a valid month")
                     return
             else:
-                startingtime = datetime(datetime.now().year, datetime.now().month, 1)
+                # If no month arg entered, get the beginning of the current month
+                startingtime = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
             
 
             embed = self.sports_schedule_month(startingtime)
-            if (embed):
+            if embed:
                 await ctx.send(embed = embed)
             else:
-                await ctx.send("I can't find any sports {} month".format("that" if month else "this"))
+                await ctx.send("I wasn't able to find any sports {} month. It's possible that this is an issue on my end, so please double check on the calendar! https://calendar.google.com/calendar/embed?src=usduo697rg31jshu4h4nn38obk%40group.calendar.google.com&ctz=America%2FNew_York".format("that" if month else "this"))
 
     def sports_schedule_month(self, starting_time):
-        ending_time = datetime(starting_time.year, starting_time.month, 1)
+        WBB_calendar_ics_url = "https://gopack.com/calendar.ashx/calendar.ics?sport_id=14&schedule_id=672"
+        MBB_calendar_ics_url = "https://gopack.com/calendar.ashx/calendar.ics?sport_id=1&schedule_id=679"
+        WKNC_google_calendar_url = "https://calendar.google.com/calendar/embed?src=usduo697rg31jshu4h4nn38obk%40group.calendar.google.com&ctz=America%2FNew_York"
+
+        # ending_time = 1st day of month after starting_time
+        ending_time = None
         if starting_time.month == 12:
             ending_time = datetime(starting_time.year + 1, 1, 1)
         else:
             ending_time = datetime(starting_time.year, starting_time.month + 1, 1)
 
-        # Get WBB and MBB webpages
-        response_WBB = r.get(cogs.shared.URL_WBB)
-        response_MBB = r.get(cogs.shared.URL_MBB)
-
-        # Parse the HTML of the pages
-        soup_WBB = BeautifulSoup(response_WBB.text, 'html.parser')
-        soup_MBB = BeautifulSoup(response_MBB.text, 'html.parser')
-
-        # Find list of all games from both pages
-        list_items_WBB = soup_WBB.find_all('li', class_=cogs.shared.SPORTS_HTML_CLASS_UPCOMING_GAME)
-        list_items_MBB = soup_MBB.find_all('li', class_=cogs.shared.SPORTS_HTML_CLASS_UPCOMING_GAME)
-
-        # Loop through WBB games and add to date_strings
-        date_strings = []
-        for item in list_items_WBB:
-            datetextentry = ""
-            div = item.find('div', class_=cogs.shared.SPORTS_HTML_CLASS_GAME_DATE)
-            if div:
-                # Get date of game
-                spans = div.find_all('span', limit=2)
-                datetextentry = spans[0].text + " " + spans[1].text
-
-                # Adjust formatting
-                if datetextentry[-2:] == "M ":
-                    datetextentry = datetextentry[:-1]
-            else:
-                print('Div element not found')
-            date_strings.append(":two_women_holding_hands::basketball: " + datetextentry)
+        # Get Women's BasketBall and Men's BaseBall calendar files
+        response_WBB = r.get(WBB_calendar_ics_url, headers={"Accept": "text/calendar", "User-Agent": "WKNCdjbot (https://github.com/elijahwe/wknc-bot)", "Referer": "https://gopack.com/sports/womens-basketball/schedule"})
+        response_MBB = r.get(MBB_calendar_ics_url, headers={"Accept": "text/calendar", "User-Agent": "WKNCdjbot (https://github.com/elijahwe/wknc-bot)", "Referer": "https://gopack.com/sports/baseball/schedule"})
         
-        # Loop through MBB games and add to date_strings
-        for item in list_items_MBB:
-            datetextentry = ""
-            div = item.find('div', class_=cogs.shared.SPORTS_HTML_CLASS_GAME_DATE)
-            if div:
-                # Get date of game
-                spans = div.find_all('span', limit=2)
-                datetextentry = spans[0].text + " " + spans[1].text
+        # Handle request issues
+        if response_WBB.status_code != 200 or response_MBB.status_code != 200:
+            return Embed(description=f"Sorry, I wasn't able to retrieve that information from the server. For now, please refer to the [WKNC Calendar]({WKNC_google_calendar_url})")
 
-                # Adjust formatting
-                datetextentry = datetextentry.replace("a.m.", "AM")
-                datetextentry = datetextentry.replace("p.m.", "PM")
-                if datetextentry[-2:] == "M ":
-                    datetextentry = datetextentry[:-1]
-            else:
-                print('Div element not found')
-            date_strings.append(":two_men_holding_hands::baseball: " + datetextentry)
-
-        # Parse all dates into tuples containing both their date and string to prepare for sorting
-        parsed_dates = []
-        for date_string in date_strings:
-            # Split date_string into different parts
-            parts = date_string.split(" ")
-            month = parts[1]
-            day = parts[2]
-            weekday = parts[3]
-            year = str(datetime.today().year) 
-            time = parts[4] + " " + parts[5] # combine the time and AM/PM parts
-
-            # Parse time
-            timeformat = True
-            if ":" in time:
-                try:
-                    time_d = datetime.strptime(time, "%I:%M %p").time()
-                except:
-                    timeformat = False
-            else:
-                try:
-                    time_d = datetime.strptime(time, "%I %p").time()
-                except:
-                    timeformat = False
-            if (not timeformat):
-                time_d = datetime.strptime("12 am", "%I %p").time()
-
-            # Use the datetime.combine function to create a datetime object from the date and time
-            date = datetime.combine(datetime.strptime(f"{month} {day} {year}", "%b %d %Y"), time_d)
-
-            # If it is in the past, assume next year
-            if date < datetime.now():
-                date = date.replace(year=datetime.now().year + 1)
-
-            # If the date falls within the month, add tuple to lsit
-            if (date > starting_time and date < ending_time):
-                parsed_dates.append((date, date_string))
-
-        # Sort the list of tuples by the parsed dates
-        sorted_dates = sorted(parsed_dates, key=lambda x: x[0])
-
-        if not sorted_dates:
+        # Generate list of games within the time bounds
+        # Each entry will be a tuple, with the first value as the datetime for the game, and the second value a string denoting what sport it is
+        game_list = []
+        for sport in ["WBB", "MBB"]:
+            # Repeat for each sport, choose appropriate file text
+            response_text = ""
+            if sport == "WBB":
+                response_text = response_WBB.text
+            elif sport == "MBB":
+                response_text = response_MBB.text
+            
+            for line in response_text.splitlines():
+                # Find each line containing a starting time datetime for a game
+                if "DTSTART" in line:
+                    # Get datetime value
+                    game_start_datetime: datetime.datetime = parser.parse(line.split(":")[1])
+                    if game_start_datetime:
+                        # Format datetime and before comparing with bounds
+                        game_start_datetime = game_start_datetime.astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
+                        game_start_datetime = game_start_datetime.replace(tzinfo=None)
+                        # Add to list if within bounds
+                        if (game_start_datetime >= starting_time and game_start_datetime < ending_time):
+                            game_list.append((game_start_datetime, sport))
+        
+        # If no games, return to let command function handle for no response
+        if len(game_list) <= 0:
             return
+        
+        # Sort tuples by their datetime (first value)
+        game_list_sorted = sorted(game_list, key=lambda x: x[0])
 
-        # Extract the sorted list of strings from the tuples
-        sorted_date_strings = [t[1] for t in sorted_dates]
-
-        # Add each string to embed text
+        # Generate embed body text
         embed_text = ""
-        for entry in sorted_date_strings:
-            embed_text += entry + "\n"
-
+        for entry in game_list_sorted:
+            # Emojis to indicate sport
+            emoji_text = ""
+            if entry[1] == "WBB":
+                emoji_text = ":two_women_holding_hands::basketball:"
+            elif entry[1] == "MBB":
+                emoji_text = ":two_men_holding_hands::baseball:"
+            
+            # Add datetime data into string
+            month_text = entry[0].strftime("%b")
+            day_text = entry[0].strftime("%d").lstrip('0')
+            weekday_text = entry[0].strftime("%a")
+            if entry[0].strftime("%M") == "00":
+                time_text = entry[0].strftime("%I%p").lstrip('0').lower()
+            else:
+                time_text = entry[0].strftime("%I:%M%p").lstrip('0').lower()
+            embed_text += f"{emoji_text} {month_text} {day_text} ({weekday_text}) {time_text}\n"
+        
+        embed_text += f"\nYou can double check this info on the [WKNC Calendar]({WKNC_google_calendar_url})"
+        
         embed = Embed(
             title = "Upcoming Sports Broadcasts for " + starting_time.strftime("%B"), description=embed_text, color=cogs.shared.EMBED_COLOR
         )

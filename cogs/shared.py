@@ -21,13 +21,7 @@ WEEKDAY_LIST = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturda
 LPS_RAND_THRESH = 10 #What page LPS will start having a chance of randomizing the thinking text
 LPS_RAND_POOL = 10 #1/X - Chance LPS will choose a different thinking text
 
-URL_WBB = "https://gopack.com/sports/womens-basketball/schedule" # Women's basketball schedule URL
-URL_MBB = "https://gopack.com/sports/baseball/schedule" # Men's basketball schedule URL
-
-SPORTS_HTML_CLASS_UPCOMING_GAME = "sidearm-schedule-game-upcoming" # HTML class for an upcoming game on the schedule
-SPORTS_HTML_CLASS_GAME_DATE = "sidearm-schedule-game-opponent-date" # HTML class for a game date on the schedule
-
-STATUS_MESSAGE = "2"
+STATUS_MESSAGE = "2.1"
 
 LOCAL_TIMEZONE = "America/New_York"
 
