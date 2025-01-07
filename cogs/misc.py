@@ -210,9 +210,9 @@ class Misc(commands.Cog):
             else:
                 await ctx.send("I wasn't able to find any sports {} month. It's possible that this is an issue on my end, so please double check on the calendar! https://calendar.google.com/calendar/embed?src=usduo697rg31jshu4h4nn38obk%40group.calendar.google.com&ctz=America%2FNew_York".format("that" if month else "this"))
 
-    def sports_schedule_month(self, starting_time):
-        WBB_calendar_ics_url = "https://gopack.com/calendar.ashx/calendar.ics?sport_id=14&schedule_id=672"
-        MBB_calendar_ics_url = "https://gopack.com/calendar.ashx/calendar.ics?sport_id=1&schedule_id=679"
+    def sports_schedule_month(self, starting_time):        
+        WBB_calendar_ics_url = "https://gopack.com/api/v2/Calendar/subscribe?type=ics&sportId=14&scheduleId=692"
+        MBB_calendar_ics_url = "https://gopack.com/api/v2/Calendar/subscribe?type=ics&sportId=1&scheduleId=703"
         WKNC_google_calendar_url = "https://calendar.google.com/calendar/embed?src=usduo697rg31jshu4h4nn38obk%40group.calendar.google.com&ctz=America%2FNew_York"
 
         # ending_time = 1st day of month after starting_time
