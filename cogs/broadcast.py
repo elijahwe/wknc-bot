@@ -315,7 +315,7 @@ class Broadcast(commands.Cog):
                     hour = str(int(hour) - 12)
 
                 # Add song string to set_spin_list
-                set_spin_list.insert(0, f"`{hour}:{minute}`  {i['song'].replace('`', '')} - {i['artist'].replace('`', '')}" + "\n")
+                set_spin_list.insert(0, f"`{hour}:{minute}`  **{i['artist'].replace('`', '')}** - {i['song'].replace('`', '')}" + "\n")
             
             # Check for limit on pages
             j += 1
@@ -512,7 +512,7 @@ class Broadcast(commands.Cog):
                 hour = str(int(hour) - 12)
 
             # Add song string to last_played_list and increment count
-            last_played_list.append(f"`{hour}:{minute}`  {i['song']} - {i['artist']} | [{djname}]({djlink})" + nowtext + "\n")
+            last_played_list.append(f"`{hour}:{minute}`  **{i['artist']}** - {i['song']} | [{djname}]({djlink})" + nowtext + "\n")
             count += 1
         
         # Join list into one string and generate embed
