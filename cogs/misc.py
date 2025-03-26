@@ -3,7 +3,7 @@ This module contains the Misc cog, and acts as an extension for bot.py
 Misc contains miscellaneous commands that do not fall under any other category
 """
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, date
 from dateutil import parser, tz
 import discord
 from discord import Embed, app_commands, AllowedMentions
@@ -16,8 +16,8 @@ import time
 import cogs.shared
 
 
-def month_string_to_datetime(month_string: str) -> datetime:
-    now = datetime.now()
+def month_string_to_date(month_string: str) -> date:
+    today = date.today()
 
     # Convert the month string to a month number
     try:
@@ -28,13 +28,13 @@ def month_string_to_datetime(month_string: str) -> datetime:
         month_number = datetime.strptime(month_string, '%b').month
 
     # If the month number is in the past, set the year to the next year
-    if month_number < now.month:
-        year = now.year + 1
+    if month_number < today.month:
+        year = today.year + 1
     else:
-        year = now.year
+        year = today.year
 
     # Return first day of the month
-    first_day = datetime(year, month_number, 1)
+    first_day = date(year, month_number, 1)
     return first_day
 
 
@@ -195,32 +195,32 @@ class Misc(commands.Cog):
             # If user entered month arg, interpret. Otherwise get current month
             if month:
                 try:
-                    startingtime = month_string_to_datetime(month)
+                    starting_date = month_string_to_date(month)
                 except:
                     await ctx.send("Please enter a valid month")
                     return
             else:
-                # If no month arg entered, get the beginning of the current month
-                startingtime = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
+                # If no month arg entered, use today's date
+                starting_date = date.today()
             
 
-            embed = self.sports_schedule_month(startingtime)
+            embed = self.sports_schedule_month(starting_date)
             if embed:
                 await ctx.send(embed = embed)
             else:
                 await ctx.send("I wasn't able to find any sports {} month. It's possible that this is an issue on my end, so please double check on the calendar! https://calendar.google.com/calendar/embed?src=usduo697rg31jshu4h4nn38obk%40group.calendar.google.com&ctz=America%2FNew_York".format("that" if month else "this"))
 
-    def sports_schedule_month(self, starting_time):        
+    def sports_schedule_month(self, starting_date: date):        
         WBB_calendar_ics_url = "https://gopack.com/api/v2/Calendar/subscribe?type=ics&sportId=14&scheduleId=692"
         MBB_calendar_ics_url = "https://gopack.com/api/v2/Calendar/subscribe?type=ics&sportId=1&scheduleId=703"
         WKNC_google_calendar_url = "https://calendar.google.com/calendar/embed?src=usduo697rg31jshu4h4nn38obk%40group.calendar.google.com&ctz=America%2FNew_York"
 
-        # ending_time = 1st day of month after starting_time
-        ending_time = None
-        if starting_time.month == 12:
-            ending_time = datetime(starting_time.year + 1, 1, 1)
+        # ending_date = 1st day of month after starting_date
+        ending_date: date = None
+        if starting_date.month == 12:
+            ending_date = date(starting_date.year + 1, 1, 1)
         else:
-            ending_time = datetime(starting_time.year, starting_time.month + 1, 1)
+            ending_date = date(starting_date.year, starting_date.month + 1, 1)
 
         # Get Women's BasketBall and Men's BaseBall calendar files
         response_WBB = r.get(WBB_calendar_ics_url, headers={"Accept": "text/calendar", "User-Agent": "WKNCdjbot (https://github.com/elijahwe/wknc-bot)", "Referer": "https://gopack.com/sports/womens-basketball/schedule"})
@@ -247,11 +247,13 @@ class Misc(commands.Cog):
                     # Get datetime value
                     game_start_datetime: datetime = parser.parse(line.split(":")[1])
                     if game_start_datetime:
-                        # Format datetime and before comparing with bounds
-                        game_start_datetime = game_start_datetime.astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
-                        game_start_datetime = game_start_datetime.replace(tzinfo=None)
-                        # Add to list if within bounds
-                        if (game_start_datetime >= starting_time and game_start_datetime < ending_time):
+                        # Adjust timezone
+                        if game_start_datetime.tzinfo:
+                            game_start_datetime = game_start_datetime.astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
+
+                        # Add datetime to list if within bounds
+                        game_start_date = date(game_start_datetime.year, game_start_datetime.month, game_start_datetime.day)
+                        if (game_start_date >= starting_date and game_start_date < ending_date):
                             game_list.append((game_start_datetime, sport))
         
         # If no games, return to let command function handle for no response
@@ -259,7 +261,7 @@ class Misc(commands.Cog):
             return
         
         # Sort tuples by their datetime (first value)
-        game_list_sorted = sorted(game_list, key=lambda x: x[0])
+        game_list_sorted = sorted(game_list, key=lambda x: x[0].replace(tzinfo=None))
 
         # Generate embed body text
         embed_text = ""
@@ -275,16 +277,19 @@ class Misc(commands.Cog):
             month_text = entry[0].strftime("%b")
             day_text = entry[0].strftime("%d").lstrip('0')
             weekday_text = entry[0].strftime("%a")
-            if entry[0].strftime("%M") == "00":
-                time_text = entry[0].strftime("%I%p").lstrip('0').lower()
-            else:
-                time_text = entry[0].strftime("%I:%M%p").lstrip('0').lower()
+            # Only add time info to output if timezone data is still intact (otherwise may not be accurate)
+            time_text = ""
+            if entry[0].tzinfo:
+                if entry[0].strftime("%M") == "00":
+                    time_text = entry[0].strftime("%I%p").lstrip('0').lower()
+                else:
+                    time_text = entry[0].strftime("%I:%M%p").lstrip('0').lower()
             embed_text += f"{emoji_text} {month_text} {day_text} ({weekday_text}) {time_text}\n"
         
-        embed_text += f"\nYou can double check this info on the [WKNC Calendar]({WKNC_google_calendar_url})"
+        embed_text += f"\nThis list may contain inaccuracies. Double check this info on the [WKNC Calendar]({WKNC_google_calendar_url})"
         
         embed = Embed(
-            title = "Upcoming Sports Broadcasts for " + starting_time.strftime("%B"), description=embed_text, color=cogs.shared.EMBED_COLOR
+            title = "Upcoming Sports Broadcasts for " + starting_date.strftime("%B"), description=embed_text, color=cogs.shared.EMBED_COLOR
         )
 
         return embed
