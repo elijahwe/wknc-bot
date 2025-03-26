@@ -245,7 +245,7 @@ class Misc(commands.Cog):
                 # Find each line containing a starting time datetime for a game
                 if "DTSTART" in line:
                     # Get datetime value
-                    game_start_datetime: datetime.datetime = parser.parse(line.split(":")[1])
+                    game_start_datetime: datetime = parser.parse(line.split(":")[1])
                     if game_start_datetime:
                         # Format datetime and before comparing with bounds
                         game_start_datetime = game_start_datetime.astimezone(tz.gettz(cogs.shared.LOCAL_TIMEZONE))
