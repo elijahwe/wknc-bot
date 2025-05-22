@@ -20,14 +20,21 @@ VALID_WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "frida
 WEEKDAY_LIST = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 LPS_RAND_THRESH = 10 #What page LPS will start having a chance of randomizing the thinking text
 LPS_RAND_POOL = 10 #1/X - Chance LPS will choose a different thinking text
+AVERAGE_ARTIST_POPULARITY_THRESHOLDS = {"Default": 48.0, "Afterhours": 40.0, "Chainsaw": 40.0, "Daytime Rock": 48.0, "Specialty Show": 48.0, "Sunrise/Sunset": 40.0, "Underground": 48.0} #Maximum average spotify popularity index across artists in a set
+TRACK_POPULARITY_THRESHOLDS = {"Default": 65, "Afterhours": 65, "Chainsaw": 65, "Daytime Rock": 65, "Specialty Show": 65, "Sunrise/Sunset": 65, "Underground": 65} #Maximum spotify popularity index for an individual track
+NAME_SIMILARITY_UPPER_MINIMUM = 0.9 #Upper minimum for two strings to be considered equivalent when evaluating tracks for popularity checking
+NAME_SIMILARITY_LOWER_MINIMUM = 0.5 #Lower minimum for two strings to be considered equivalent when evaluating tracks for popularity checking
+POPULARITY_CHECK_EXCEPTION_SPINITRON_IDS = [10555, 175563] #Spinitron IDs to be exempt from popularity check
 
 STATUS_MESSAGE = "2.1"
 
 LOCAL_TIMEZONE = "America/New_York"
 
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
-DEV_SERVER_DISCORD_ID = int(os.getenv("DEV_SERVER_DISCORD_ID"))
-
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+WKNC_SERVER_DISCORD_ID = int(os.getenv("WKNC_SERVER_DISCORD_ID"))
+POPULARITY_CHECK_CHANNEL_DISCORD_ID = int(os.getenv("POPULARITY_CHECK_CHANNEL_DISCORD_ID"))
 BOT_CREATOR_DISCORD_ID = int(os.getenv("BOT_CREATOR_DISCORD_ID"))
 BOT_ADMIN_DISCORD_ID = int(os.getenv("BOT_ADMIN_DISCORD_ID"))
 DEV_SERVER_DISCORD_ID = int(os.getenv("DEV_SERVER_DISCORD_ID"))
