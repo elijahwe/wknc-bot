@@ -49,6 +49,10 @@ class Tasks_Events(commands.Cog):
         self.changeStatus.start()
         self.checkSetPopularity.start()
 
+    async def cog_unload(self):
+        self.changeStatus.cancel()
+        self.checkSetPopularity.cancel()
+
     @tasks.loop(seconds=60)
     async def changeStatus(self):
         """Every minute, check the currently playing set and update Discord status to it"""
