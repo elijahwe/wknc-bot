@@ -86,13 +86,7 @@ class Tasks_Events(commands.Cog):
         end_datetime_str = urllib.parse.quote(end_datetime.isoformat())
         start_datetime_str = urllib.parse.quote(start_datetime.isoformat())
         
-        #playlists = r.get(f"https://spinitron.com/api/playlists?start={start_datetime_str}&end={end_datetime_str}", headers=cogs.shared.HEADERS_HDX[1]).json()['items']
-        playlists= [ # Set of test playlists to check if bot is triggering properly
-            r.get(f"https://spinitron.com/api/playlists/20421641", headers=cogs.shared.HEADERS_HDX[1]).json(), # Pos (artists and tracks)
-            r.get(f"https://spinitron.com/api/playlists/20452317", headers=cogs.shared.HEADERS_HDX[1]).json(), # Pos (just tracks)
-            r.get(f"https://spinitron.com/api/playlists/20704968", headers=cogs.shared.HEADERS_HDX[1]).json(), # Neg
-            r.get(f"https://spinitron.com/api/playlists/20491919", headers=cogs.shared.HEADERS_HDX[1]).json(), # Pos (just artists)
-        ]
+        playlists = r.get(f"https://spinitron.com/api/playlists?start={start_datetime_str}&end={end_datetime_str}", headers=cogs.shared.HEADERS_HDX[1]).json()['items']
 
         for playlist in playlists:
             try:
