@@ -269,8 +269,8 @@ class Tasks_Events(commands.Cog):
                         flag_message += artist_flag_message + track_flag_message
 
                     # Get channel to send notification to
-                    guild = self.bot.get_guild(cogs.shared.WKNC_SERVER_DISCORD_ID)
-                    channel = guild.get_channel(cogs.shared.POPULARITY_CHECK_CHANNEL_DISCORD_ID)
+                    guild = self.bot.get_guild(802353283473211402)
+                    channel = guild.get_channel(1375177441336623215)
 
                     if len(flag_message) < 4096:
                         embed = discord.Embed(description=flag_message)
