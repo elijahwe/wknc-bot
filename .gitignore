@@ -4,6 +4,7 @@
 
 # Local Files
 .env
+.cache
 *.db
 *.log
 *.bak
