@@ -46,6 +46,8 @@ class Tasks_Events(commands.Cog):
     "Tasks and events/listeners"
     def __init__(self, bot):
         self.bot = bot
+        self.changeStatus.start()
+        self.checkSetPopularity.start()
 
     @tasks.loop(seconds=60)
     async def changeStatus(self):
@@ -64,6 +66,11 @@ class Tasks_Events(commands.Cog):
             current_listening_text = str(listening_text)
             await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=current_listening_text))
     
+    @changeStatus.before_loop
+    async def before_changeStatus(self):
+        print("Checking if bot is ready before starting status change...")
+        await self.bot.wait_until_ready()
+
     @tasks.loop(hours=1)
     async def checkSetPopularity(self):
         """Every hour, flag any recent HD-1 sets that pass popularity threshold and notify admin"""
@@ -291,13 +298,15 @@ class Tasks_Events(commands.Cog):
                 print("Error during popularity check:")
                 print(e)
 
+    @checkSetPopularity.before_loop
+    async def before_checkSetPopularity(self):
+        print("Checking if bot is ready before starting popularity check...")
+        await self.bot.wait_until_ready()
     
     @commands.Cog.listener()
     async def on_ready(self):
         """What the discord bot does upon connection to the server"""
         print(f"{self.bot.user.name} has connected to Discord!")
-        self.changeStatus.start()
-        self.checkSetPopularity.start()
 
     @commands.Cog.listener()
     async def on_message(self, message):
