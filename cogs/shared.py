@@ -4,7 +4,7 @@ This module defines constants to be used by other modules
 import os
 
 # Variables with suffix _HDX indicate that it is a dictionary, where key 1 correlates to channel HD1 and key 2 correlates to channel HD2
-DJ_AV_SPINITRON_ID_HDX = {1:"10555", 2:"69608"}
+ZETTA_SPINITRON_ID_HDX = {1:"188104", 2:"188105"}
 SPINITRON_URL_CHANNEL_HDX = {1:"WKNC", 2:"WKNC-HD2"}
 HEADERS_HDX = {1:{"Authorization": "Bearer {}".format(os.getenv("SPINITRON_TOKEN_HD1"))}, 2:{"Authorization": "Bearer {}".format(os.getenv("SPINITRON_TOKEN_HD2"))}}
 WEBSTREAM_URL_HDX = {1:"https://streaming.live365.com/a45877", 2:"https://streaming.live365.com/a30009"}

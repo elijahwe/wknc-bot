@@ -52,9 +52,8 @@ def my_parser(date: str, space: bool = True, ampm: bool = True) -> str:
             ampm_str = "pm"
     return "{}{}{}".format(dt % 12 or 12, spacechar, ampm_str)
 
-def is_av(show: dict, channel: int = 1) -> bool:
-    """Takes a link to a DJ's spinitron page and returns true if the DJ has been designated
-        as "Automated"
+def is_automated(show: dict, channel: int = 1) -> bool:
+    """Takes a dictionary for a spinitron "show" object, and returns true if the show's DJ is "DJ Zetta", WKNC's automation system.
     Args:
         show (dict): A dict representing a single 'show' as taken from the Spinitron API
         channel (int): An int representing a WKNC channel: 1 for HD-1, 2 for HD-2
@@ -62,9 +61,9 @@ def is_av(show: dict, channel: int = 1) -> bool:
         bool: True, if the DJ ID has been designated as "Automated"
     """
     if channel == 1:
-        return cogs.shared.DJ_AV_SPINITRON_ID_HDX[1] in show["_links"]["personas"][0]["href"]
+        return cogs.shared.ZETTA_SPINITRON_ID_HDX[1] in show["_links"]["personas"][0]["href"]
     if channel == 2:
-        return cogs.shared.DJ_AV_SPINITRON_ID_HDX[2] in show["_links"]["personas"][0]["href"]
+        return cogs.shared.ZETTA_SPINITRON_ID_HDX[2] in show["_links"]["personas"][0]["href"]
 
     return False
 
@@ -127,7 +126,7 @@ def get_next_show(upcoming_shows: list, channel: int = 1) -> dict:
         dict: The next show
     """
     return next(
-        (show for show in upcoming_shows if not is_av(show, channel) and not is_in_past(show["start"])),
+        (show for show in upcoming_shows if not is_automated(show, channel) and not is_in_past(show["start"])),
         None,
     )
 
@@ -178,7 +177,7 @@ class Broadcast(commands.Cog):
         self.bot = bot
 
 
-    @commands.hybrid_command(name="djset", brief="All songs played on the last, non DJ AV show")
+    @commands.hybrid_command(name="djset", brief="All songs played on the last, non automated show")
     @app_commands.describe(djname="(optional) Specify a DJ whose last set you want to see")
     async def djset(self, ctx: commands.Context, *, djname: str = None):
         if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
@@ -188,12 +187,12 @@ class Broadcast(commands.Cog):
         else:
             await ctx.send("Please either send this command in a dedicated channel or use the djset1 or djset2 commands")
 
-    @commands.hybrid_command(name="djset1", brief="All songs played on the last, non DJ AV show on HD-1")
+    @commands.hybrid_command(name="djset1", brief="All songs played on the last, non automated show on HD-1")
     @app_commands.describe(djname="(optional) Specify a DJ whose last set you want to see")
     async def djset_hd1(self, ctx: commands.Context, *, djname: str = None):
         await self.djset_query(ctx, channel_num=1, djname=djname)
 
-    @commands.hybrid_command(name="djset2", brief="All songs played on the last, non DJ AV show on HD-2")
+    @commands.hybrid_command(name="djset2", brief="All songs played on the last, non automated show on HD-2")
     @app_commands.describe(djname="(optional) Specify a DJ whose last set you want to see")
     async def djset_hd2(self, ctx: commands.Context, *, djname: str = None):
         await self.djset_query(ctx, channel_num=2, djname=djname)
@@ -213,9 +212,9 @@ class Broadcast(commands.Cog):
         # Get list of last playlists from Spinitron
         last_playlists = r.get(f"https://spinitron.com/api/playlists?count={cogs.shared.LAST_SET_RANGE}", headers=cogs.shared.HEADERS_HDX[channel_num]).json()["items"]
 
-        # Count up to closest non AV set
+        # Count up to closest non automated set
         i = 0
-        while (cogs.shared.DJ_AV_SPINITRON_ID_HDX[channel_num] in last_playlists[i]["_links"]["persona"]["href"] and i < cogs.shared.LAST_SET_RANGE - 1):
+        while (cogs.shared.ZETTA_SPINITRON_ID_HDX[channel_num] in last_playlists[i]["_links"]["persona"]["href"] and i < cogs.shared.LAST_SET_RANGE - 1):
             i += 1
 
         # If limit was hit, say no sets found
@@ -524,7 +523,7 @@ class Broadcast(commands.Cog):
         return embed
 
 
-    @commands.hybrid_command(name="nextshow", brief="The next, non DJ AV show")
+    @commands.hybrid_command(name="nextshow", brief="The next, non automated show")
     async def next_show(self, ctx: commands.Context):
         if (ctx.channel.id == cogs.shared.DISCORD_TEXT_CHANNEL_ID_HDX[1]):
             await self.next_show_query(ctx, channel_num=1)
@@ -533,11 +532,11 @@ class Broadcast(commands.Cog):
         else:
             await ctx.send("Please either send this command in a dedicated channel or use the nextshow1 or nextshow2 commands")
 
-    @commands.hybrid_command(name="nextshow1", brief="The next, non DJ AV show on HD-1")
+    @commands.hybrid_command(name="nextshow1", brief="The next, non automated show on HD-1")
     async def next_show_hd1(self, ctx: commands.Context):
         await self.next_show_query(ctx, channel_num=1)
 
-    @commands.hybrid_command(name="nextshow2", brief="The next, non DJ AV show on HD-2")
+    @commands.hybrid_command(name="nextshow2", brief="The next, non automated show on HD-2")
     async def next_show_hd2(self, ctx: commands.Context):
         await self.next_show_query(ctx, channel_num=2)
 
@@ -697,10 +696,10 @@ class Broadcast(commands.Cog):
 
         embed = Embed()
 
-        # Generate schedule - list of strings, each with a non AV show
+        # Generate schedule - list of strings, each with a non automated show
         schedule = []
         for show in upcoming_shows:
-            if not is_av(show, channel_num):
+            if not is_automated(show, channel_num):
                 persona_data = r.get(show["_links"]["personas"][0]["href"], headers=cogs.shared.HEADERS_HDX[channel_num]).json()
                 show_persona = persona_data["name"]
                 persona_id = persona_data["id"]
@@ -729,7 +728,7 @@ class Broadcast(commands.Cog):
         for show in upcoming_shows:
             if not is_today(show["start"]):
                 break
-            if not is_av(show, channel_num):
+            if not is_automated(show, channel_num):
                 persona_data = r.get(show["_links"]["personas"][0]["href"], headers=cogs.shared.HEADERS_HDX[channel_num]).json()
                 show_persona = persona_data["name"]
                 persona_id = persona_data["id"]
@@ -786,7 +785,6 @@ class Broadcast(commands.Cog):
                     f"https://spinitron.com/api/spins?start={start_date}&count=200&page={page}&show_id={show_id.value}",
                     headers=cogs.shared.HEADERS_HDX[channel_num],
                 ).json()["items"]
-                print(page)
                 for spin in response:
                     key = "{} by {}".format(spin["song"], spin["artist"])
                     artist = spin["artist"]
