@@ -59,8 +59,8 @@ class Tasks_Events(commands.Cog):
         global current_listening_text
         current_set = r.get("https://spinitron.com/api/playlists?count=1", headers=cogs.shared.HEADERS_HDX[1]).json()["items"][0]
         listening_text: str
-        if (str(current_set["persona_id"]) == cogs.shared.DJ_AV_SPINITRON_ID_HDX[1]):
-            # If AV is currently playing, set status to genre block name instead
+        if (str(current_set["persona_id"]) == cogs.shared.ZETTA_SPINITRON_ID_HDX[1]):
+            # If zetta is currently playing, set status to genre block name instead
             listening_text = r.get("https://spinitron.com/api/shows?count=1", headers=cogs.shared.HEADERS_HDX[1]).json()["items"][0]["category"]
         else:
             listening_text = r.get("https://spinitron.com/api/shows?count=1", headers=cogs.shared.HEADERS_HDX[1]).json()["items"][0]["title"]
@@ -104,7 +104,7 @@ class Tasks_Events(commands.Cog):
                 if playlist_end_datetime > end_datetime:
                     continue
 
-                # Skip AV sets
+                # Skip Zetta sets
                 if playlist['persona_id'] in cogs.shared.POPULARITY_CHECK_EXCEPTION_SPINITRON_IDS:
                     print("Popularity check: Skipping excepted playlist")
                     continue
