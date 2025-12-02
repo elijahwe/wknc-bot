@@ -2,6 +2,7 @@
 This module contains the Misc cog, and acts as an extension for bot.py
 Misc contains miscellaneous commands that do not fall under any other category
 """
+import asyncio
 from bs4 import BeautifulSoup
 from datetime import datetime, date
 from dateutil import parser, tz
@@ -323,6 +324,22 @@ class Misc(commands.Cog):
     async def status(self, ctx: commands.Context):
         await ctx.send(cogs.shared.STATUS_MESSAGE)
         await ctx.send(f"Discord py version {discord.__version__}")
+
+    @commands.command(name="tasks", hidden=True)
+    async def tasks(self, ctx: commands.Context):
+        loops = []
+        for t in asyncio.all_tasks():
+            coro = getattr(t, "_coro", None)
+            if coro and coro.__qualname__.startswith("Loop._loop"):
+                loop_obj = coro.cr_frame.f_locals.get("self")
+                if isinstance(loop_obj, discord.ext.tasks.Loop):
+                    loops.append(loop_obj)
+        
+        tasks_str = f"{len(loops)} tasks running.\n"
+        for loop in loops:
+            tasks_str += f"Hours: {loop.hours}, Iteration: {str(loop.current_loop)}\n"
+        
+        await ctx.send(tasks_str)
 
 async def setup(bot):
     await bot.add_cog(Misc(bot))
