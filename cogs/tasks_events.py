@@ -85,10 +85,11 @@ class Tasks_Events(commands.Cog):
         spotify_client = spotipy.Spotify(auth_manager=spotify_auth_manager)
 
         # Starting and ending times for playlists query
-        end_datetime = datetime.datetime.now()
         if datetime.datetime.now() < datetime.datetime(2025, 12, 4, 0, 0, 0, 0):
-            start_datetime = end_datetime - datetime.timedelta(hours=3)
+            end_datetime = datetime.datetime.now() - datetime.timedelta(hours=7)
+            start_datetime = end_datetime - datetime.timedelta(hours=8)
         else:
+            end_datetime = datetime.datetime.now()
             start_datetime = end_datetime - datetime.timedelta(hours=1)
         end_datetime_str = urllib.parse.quote(end_datetime.isoformat())
         start_datetime_str = urllib.parse.quote(start_datetime.isoformat())
