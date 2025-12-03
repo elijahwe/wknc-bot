@@ -86,7 +86,7 @@ class Tasks_Events(commands.Cog):
 
         # Starting and ending times for playlists query
         end_datetime = datetime.datetime.now()
-        if datetime.datetime.now() < datetime.datetime(2025, 12, 3, 0, 0, 0, 0):
+        if datetime.datetime.now() < datetime.datetime(2025, 12, 4, 0, 0, 0, 0):
             start_datetime = end_datetime - datetime.timedelta(hours=3)
         else:
             start_datetime = end_datetime - datetime.timedelta(hours=1)
