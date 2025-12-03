@@ -90,7 +90,8 @@ class Tasks_Events(commands.Cog):
         end_datetime_str = urllib.parse.quote(end_datetime.isoformat())
         start_datetime_str = urllib.parse.quote(start_datetime.isoformat())
         
-        playlists = r.get(f"https://spinitron.com/api/playlists?start={start_datetime_str}&end={end_datetime_str}", headers=cogs.shared.HEADERS_HDX[1]).json()['items']
+        playlists_json_dict: dict = r.get(f"https://spinitron.com/api/playlists?start={start_datetime_str}&end={end_datetime_str}", headers=cogs.shared.HEADERS_HDX[1]).json()
+        playlists = playlists_json_dict['items']
 
         for playlist in playlists:
             try:
