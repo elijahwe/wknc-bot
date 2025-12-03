@@ -315,6 +315,51 @@ class Tasks_Events(commands.Cog):
             async with message.channel.typing():
                 await message.channel.send("who said that")
 
+    @commands.command(name="tasks", hidden=True)
+    async def tasks(self, ctx: commands.Context):
+        loops = []
+        for t in asyncio.all_tasks():
+            coro = getattr(t, "_coro", None)
+            if coro and coro.__qualname__.startswith("Loop._loop"):
+                loop_obj = coro.cr_frame.f_locals.get("self")
+                if isinstance(loop_obj, discord.ext.tasks.Loop):
+                    loops.append(loop_obj)
+        
+        tasks_str = f"{len(loops)} tasks running.\n"
+        for loop in loops:
+            tasks_str += f"Hours: {loop.hours}, Iteration: {str(loop.current_loop)}\n"
+        
+        await ctx.send(tasks_str)
+    
+    @commands.command(name="stoptasks", hidden=True)
+    async def stoptasks(self, ctx: commands.Context):
+        if (ctx.author.id == cogs.shared.BOT_ADMIN_DISCORD_ID):
+            if self.changeStatus.is_running():
+                self.changeStatus.cancel()
+            if self.checkSetPopularity.is_running():
+                self.checkSetPopularity.cancel()
+            
+            await ctx.send("Tasks stopped.")
+        else:
+            await ctx.send("Sorry, this command is only meant to be used by my administrator")
+
+    
+    @commands.command(name="starttasks", hidden=True)
+    async def starttasks(self, ctx: commands.Context):
+        if (ctx.author.id == cogs.shared.BOT_ADMIN_DISCORD_ID):
+            if self.changeStatus.is_running():
+                self.changeStatus.restart()
+            else:
+                self.changeStatus.start()
+            if self.checkSetPopularity.is_running():
+                self.checkSetPopularity.restart()
+            else:
+                self.checkSetPopularity.start()
+
+            await ctx.send("Tasks started.")
+        else:
+            await ctx.send("Sorry, this command is only meant to be used by my administrator")
+
 
 async def setup(bot):
     await bot.add_cog(Tasks_Events(bot))
