@@ -324,6 +324,7 @@ class Misc(commands.Cog):
     async def status(self, ctx: commands.Context):
         await ctx.send(cogs.shared.STATUS_MESSAGE)
         await ctx.send(f"Discord py version {discord.__version__}")
+        await ctx.send(f"Current system time: {datetime.now()}")
 
 
 async def setup(bot):
