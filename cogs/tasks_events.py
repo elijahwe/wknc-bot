@@ -9,6 +9,7 @@ import difflib
 import discord
 from discord.ext import commands, tasks
 from importlib import reload
+import logging
 import re
 import requests as r
 import spotipy
@@ -85,9 +86,9 @@ class Tasks_Events(commands.Cog):
         spotify_client = spotipy.Spotify(auth_manager=spotify_auth_manager)
 
         # Starting and ending times for playlists query
-        if datetime.datetime.now() < datetime.datetime(2025, 12, 4, 0, 0, 0, 0):
-            end_datetime = datetime.datetime.now() - datetime.timedelta(hours=7)
-            start_datetime = end_datetime - datetime.timedelta(hours=8)
+        if datetime.datetime.now() < datetime.datetime(2025, 12, 5, 0, 0, 0, 0):
+            end_datetime = datetime.datetime.now() - datetime.timedelta(hours=31)
+            start_datetime = end_datetime - datetime.timedelta(hours=3)
         else:
             end_datetime = datetime.datetime.now()
             start_datetime = end_datetime - datetime.timedelta(hours=1)
@@ -301,6 +302,7 @@ class Tasks_Events(commands.Cog):
                     print("Popularity check: Passed")
 
             except Exception as e:
+                logging.error(e)
                 print("Error during popularity check:")
                 print(e)
 
