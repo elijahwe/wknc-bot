@@ -24,7 +24,7 @@ AVERAGE_ARTIST_POPULARITY_THRESHOLDS = {"Default": 48.0, "Afterhours": 40.0, "Ch
 TRACK_POPULARITY_THRESHOLDS = {"Default": 65, "Afterhours": 65, "Chainsaw": 65, "Daytime Rock": 65, "Specialty Show": 65, "Sunrise/Sunset": 65, "Underground": 65} #Maximum spotify popularity index for an individual track
 NAME_SIMILARITY_UPPER_MINIMUM = 0.9 #Upper minimum for two strings to be considered equivalent when evaluating tracks for popularity checking
 NAME_SIMILARITY_LOWER_MINIMUM = 0.5 #Lower minimum for two strings to be considered equivalent when evaluating tracks for popularity checking
-POPULARITY_CHECK_EXCEPTION_SPINITRON_IDS = [10555, 175563] #Spinitron IDs to be exempt from popularity check
+POPULARITY_CHECK_EXCEPTION_SPINITRON_IDS = [10555, 175563, 188104] #Spinitron IDs to be exempt from popularity check
 
 STATUS_MESSAGE = "2.1"
 
