@@ -234,7 +234,22 @@ class Broadcast(commands.Cog):
             headers=cogs.shared.HEADERS_HDX[channel_num],
         ).json()["items"]
         
-        response_message: str
+        # WKNC DJ names do not follow a consistent naming scheme. Some include "DJ " at the beginning and others do not
+        # A common user error for this command is to falsely include or omit the opening "DJ " before a DJ name
+        if not response:
+            # If the user included "DJ" in their argument, try without
+            if dj_name.lower()[:3] == "dj ":
+                response = r.get(
+                    "https://spinitron.com/api/personas?name={}".format(dj_name[3:].replace(" ", "%20")),
+                    headers=cogs.shared.HEADERS_HDX[channel_num],
+                ).json()["items"]
+            # If the user did not include "DJ" in their argument, try including
+            else:
+                response = r.get(
+                    "https://spinitron.com/api/personas?name={}".format(f"DJ {dj_name}".replace(" ", "%20")),
+                    headers=cogs.shared.HEADERS_HDX[channel_num],
+                ).json()["items"]
+
         if not response:
             await ctx.send(f"Huh, I couldn't seem to find {dj_name} on HD-{channel_num}. Are you sure that's the right DJ Name?")
         else:
