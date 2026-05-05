@@ -11,8 +11,14 @@ WEBSTREAM_URL_HDX = {1:"https://streaming.live365.com/a45877", 2:"https://stream
 DISCORD_TEXT_CHANNEL_ID_HDX = {1:int(os.getenv("HD1_DISCORD_TEXT_CHANNEL_ID")), 2:int(os.getenv("HD2_DISCORD_TEXT_CHANNEL_ID"))}
 DISCORD_VOICE_CHANNEL_ID_HDX = {1:int(os.getenv("HD1_DISCORD_VOICE_CHANNEL_ID")), 2:int(os.getenv("HD2_DISCORD_VOICE_CHANNEL_ID"))}
 
-EMBED_COLOR = 0xC3409D
+INTRANET_URL = "https://wknc.org/intranet"
+SONG_REPORT_FORM_URL = "https://wknc.org/report"
+ARTIST_REPORT_FORM_URL = "https://forms.gle/TMVCL6yTK43NYjSQ8"
+FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdHzpKs_dNA9eauQE2XHttbplkJ7SC5p9jUW1TtfvY23R5eoA/viewform"
+PROHIBITED_LANGUAGE_URL = "https://docs.google.com/document/d/1j6UQY7WiEp7xkuk1Dnz4URhqfSwhbs8Gqhy20cFGx2g"
+POPULAR_ARTISTS_LIST_URL = "https://docs.google.com/spreadsheets/d/15ZUXj0baHWNmEINCLjTQ0LLb11NkE0pHHRwdaDhuN9g"
 
+EMBED_COLOR = 0xC3409D
 LAST_SET_RANGE = 100 #How far back the bot will look for the last set with the djset command
 BUTTON_TIMEOUT = 60 #Button timeout time in seconds
 MAX_PAGES_FOR_DJSET = 3 #Max pages the djset command will go through

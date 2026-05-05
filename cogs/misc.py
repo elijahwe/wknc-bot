@@ -182,11 +182,36 @@ class Misc(commands.Cog):
             )
 
 
-    @commands.hybrid_command(name="report", brief="Pulls up the WKNC Track Report Form")
+    @commands.hybrid_command(name="intranet", brief="Link for the WKNC intranet")
+    async def intranet(self, ctx: commands.Context):
+        async with ctx.typing():
+            await ctx.send(f"Access the intranet at {cogs.shared.INTRANET_URL}")
+
+    @commands.hybrid_command(name="report", brief="WKNC Track Report Form")
     async def report(self, ctx: commands.Context):
         async with ctx.typing():
-            await ctx.send("Heard a song with an expletive, an outdated promo or something that otherwise needs to be reviewed? Report it here: https://wknc.org/report")
+            await ctx.send(f"Heard a song with an expletive, an outdated promo or something that otherwise needs to be reviewed? Report it here: {cogs.shared.SONG_REPORT_FORM_URL}")
     
+    @commands.hybrid_command(name="artistreport", brief="Artists with allegations submission form")
+    async def artistreport(self, ctx: commands.Context):
+        async with ctx.typing():
+            await ctx.send(f"[Artists with allegations submission form]({cogs.shared.ARTIST_REPORT_FORM_URL})")
+
+    @commands.hybrid_command(name="language", brief="On-air prohibited language reference")
+    async def language(self, ctx: commands.Context):
+        async with ctx.typing():
+            await ctx.send(f"[WKNC On-Air Prohibited Language Reference]({cogs.shared.PROHIBITED_LANGUAGE_URL})")
+    
+    @commands.hybrid_command(name="popular", brief="Popular artists list")
+    async def popular(self, ctx: commands.Context):
+        async with ctx.typing():
+            await ctx.send(f"[Popular artists list]({cogs.shared.POPULAR_ARTISTS_LIST_URL})")
+    
+    @commands.hybrid_command(name="feedback", brief="Suggestion/Issue form")
+    async def feedback(self, ctx: commands.Context):
+        async with ctx.typing():
+            await ctx.send(f"Have a suggestion or an issue you'd like to report? Submit it [here]({cogs.shared.FEEDBACK_FORM_URL})")
+
     
     @commands.hybrid_command(name="sports", brief="Upcoming sports broadcasts for the month")
     @app_commands.describe(month="(optional) Specify a month to check for sports")
